@@ -15,7 +15,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,11 +31,11 @@ jobs:
           if [ "${{ github.event.inputs.arch }}" = "x86_64" ]; then
             PLATFORM="linux/amd64"
           else
-            PLATFORM="linux/arm64" 
+            PLATFORM="linux/arm64"
           fi
-          
+
           echo "Building for platform: $PLATFORM"
-          
+
           docker buildx build \
             --platform $PLATFORM \
             --load \
@@ -45,7 +45,7 @@ jobs:
       - name: Extract RPMs
         run: |
           mkdir -p output
-          
+
           # Run container and extract files
           docker run --rm -v $(pwd)/output:/output ruby-builder bash -c "
             # Check what's actually in the container
@@ -55,16 +55,40 @@ jobs:
             ls -la /home/builder/output/ 2>/dev/null || echo 'No output directory found'
             echo 'RPMS directory:'
             ls -la /home/builder/rpmbuild/RPMS/ 2>/dev/null || echo 'No RPMS directory found'
-          
-            # Copy from the container's output directory (where they were placed in the Dockerfile)
-            cp /home/builder/output/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from output directory' || echo 'No RPMs in output directory'
-          
+
+            # Copy from the container's output directory using find to avoid glob issues
+            if [ -d '/home/builder/output' ]; then
+              find /home/builder/output -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
+              if [ \$? -eq 0 ]; then
+                echo 'Copied RPMs from output directory'
+              else
+                echo 'No RPMs in output directory'
+              fi
+            fi
+
             # Also try the traditional RPM build locations
-            cp /home/builder/rpmbuild/RPMS/*/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from rpmbuild' || echo 'No RPMs in rpmbuild'
-            cp /home/builder/rpmbuild/SRPMS/*.rpm /output/ 2>/dev/null || echo 'No source RPMs found'  
-            cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || echo 'No modified spec found'
-            cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || echo 'No original spec found'
-          
+            if [ -d '/home/builder/rpmbuild/RPMS' ]; then
+              find /home/builder/rpmbuild/RPMS -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
+              if [ \$? -eq 0 ]; then
+                echo 'Copied RPMs from rpmbuild'
+              else
+                echo 'No RPMs in rpmbuild'
+              fi
+            fi
+
+            if [ -d '/home/builder/rpmbuild/SRPMS' ]; then
+              find /home/builder/rpmbuild/SRPMS -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
+              if [ \$? -eq 0 ]; then
+                echo 'Copied source RPMs'
+              else
+                echo 'No source RPMs found'
+              fi
+            fi
+
+            # Copy spec files if they exist
+            [ -f '/home/builder/rpmbuild/SPECS/ruby.spec' ] && cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec && echo 'Copied modified spec' || echo 'No modified spec found'
+            [ -f '/home/builder/rpmbuild/SPECS/ruby.spec.bak' ] && cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec && echo 'Copied original spec' || echo 'No original spec found'
+
             echo 'Final output contents:'
             ls -la /output/
           "
@@ -73,7 +97,7 @@ jobs:
         run: |
           echo "Generated files:"
           ls -la output/
-          
+
           echo "RPM details:"
           for rpm in output/*.rpm; do
             if [ -f "$rpm" ]; then

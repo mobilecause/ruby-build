@@ -19,10 +19,10 @@ jobs:
     strategy:
       matrix:
         arch:
-          - ${{ github.event.inputs.architecture == 'x86_64' && 'x86_64' || github.event.inputs.architecture == 'aarch64' && 'aarch64' || github.event.inputs.architecture == 'both' && 'x86_64' || 'x86_64' }}
-          - ${{ github.event.inputs.architecture == 'both' && 'aarch64' || '' }}
+          - ${{ (github.event.inputs.architecture == 'both' || github.event.inputs.architecture == 'x86_64') && 'x86_64' || null }}
+          - ${{ (github.event.inputs.architecture == 'both' || github.event.inputs.architecture == 'aarch64') && 'aarch64' || null }}
         exclude:
-          - arch: ''
+          - arch: null
 
     name: Build Ruby RPM (${{ matrix.arch }})
 
@@ -47,7 +47,7 @@ jobs:
             PLATFORM="linux/arm64"
             TAG_SUFFIX="arm64"
           fi
-          
+
           docker buildx build \
             --platform $PLATFORM \
             --load \
@@ -57,35 +57,74 @@ jobs:
 
       - name: Extract RPMs from container
         run: |
+          mkdir -p output-${{ matrix.arch }}
+
+          # Set correct tag suffix
           if [ "${{ matrix.arch }}" = "x86_64" ]; then
             TAG_SUFFIX="x86"
           else
             TAG_SUFFIX="arm64"
           fi
-          
-          mkdir -p output-${{ matrix.arch }}
-          
-          docker run --rm \
-            -v $(pwd)/output-${{ matrix.arch }}:/output \
-            ruby-builder-$TAG_SUFFIX \
-            bash -c "
-              # Copy from the container's output directory (where they were placed in the Dockerfile)
-              cp /home/builder/output/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from output directory' || echo 'No RPMs in output directory'
-          
-              # Also try the traditional RPM build locations
-              cp /home/builder/rpmbuild/RPMS/*/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from rpmbuild' || echo 'No RPMs in rpmbuild'
-              cp /home/builder/rpmbuild/SRPMS/*.rpm /output/ 2>/dev/null || echo 'No source RPMs found'
-              cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || echo 'No modified spec found'
-              cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || echo 'No original spec found'
-          
-              echo 'Final output contents:'
-              ls -la /output/
-            "
+
+          # Run container and extract files using the correct tag
+          docker run --rm -v $(pwd)/output-${{ matrix.arch }}:/output ruby-builder-$TAG_SUFFIX bash -c "
+            # Check what's actually in the container
+            echo 'Container contents:'
+            ls -la /home/builder/
+            echo 'RPM build output:'
+            ls -la /home/builder/output/ 2>/dev/null || echo 'No output directory found'
+            echo 'RPMS directory:'
+            ls -la /home/builder/rpmbuild/RPMS/ 2>/dev/null || echo 'No RPMS directory found'
+
+            # Copy from the container's output directory using find to avoid glob issues
+            if [ -d '/home/builder/output' ]; then
+              find /home/builder/output -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
+              if [ \$? -eq 0 ]; then
+                echo 'Copied RPMs from output directory'
+              else
+                echo 'No RPMs in output directory'
+              fi
+            fi
+
+            # Also try the traditional RPM build locations
+            if [ -d '/home/builder/rpmbuild/RPMS' ]; then
+              find /home/builder/rpmbuild/RPMS -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
+              if [ \$? -eq 0 ]; then
+                echo 'Copied RPMs from rpmbuild'
+              else
+                echo 'No RPMs in rpmbuild'
+              fi
+            fi
+
+            if [ -d '/home/builder/rpmbuild/SRPMS' ]; then
+              find /home/builder/rpmbuild/SRPMS -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
+              if [ \$? -eq 0 ]; then
+                echo 'Copied source RPMs'
+              else
+                echo 'No source RPMs found'
+              fi
+            fi
+
+            # Copy spec files if they exist
+            [ -f '/home/builder/rpmbuild/SPECS/ruby.spec' ] && cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec && echo 'Copied modified spec' || echo 'No modified spec found'
+            [ -f '/home/builder/rpmbuild/SPECS/ruby.spec.bak' ] && cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec && echo 'Copied original spec' || echo 'No original spec found'
+
+            echo 'Final output contents:'
+            ls -la /output/
+          "
 
       - name: List built RPMs
         run: |
           echo "Built RPMs for ${{ matrix.arch }}:"
           ls -la output-${{ matrix.arch }}/
+
+          echo "RPM details:"
+          for rpm in output-${{ matrix.arch }}/*.rpm; do
+            if [ -f "$rpm" ]; then
+              echo "=== $(basename $rpm) ==="
+              rpm -qp --info "$rpm" 2>/dev/null || echo "Could not read RPM info"
+            fi
+          done
 
       - name: Upload RPM artifacts
         uses: actions/upload-artifact@v4
@@ -95,8 +134,6 @@ jobs:
             output-${{ matrix.arch }}/*.rpm
             output-${{ matrix.arch }}/*.spec
           retention-days: 30
-
-
 
   summary:
     needs: build-rpm
@@ -114,7 +151,7 @@ jobs:
           echo "# Ruby 3.0.7 RPM Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Built Packages" >> $GITHUB_STEP_SUMMARY
-          
+
           for arch_dir in all-artifacts/ruby-3.0.7-rpms-*; do
             if [ -d "$arch_dir" ]; then
               arch=$(basename "$arch_dir" | sed 's/ruby-3.0.7-rpms-//')
@@ -125,7 +162,7 @@ jobs:
               echo "" >> $GITHUB_STEP_SUMMARY
             fi
           done
-          
+
           echo "## Key Features" >> $GITHUB_STEP_SUMMARY
           echo "- Ruby 3.0.7 compiled with OpenSSL 1.1.1w support" >> $GITHUB_STEP_SUMMARY
           echo "- Compatible with Amazon Linux 2023" >> $GITHUB_STEP_SUMMARY
