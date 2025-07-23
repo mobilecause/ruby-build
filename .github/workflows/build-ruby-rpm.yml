@@ -127,7 +127,7 @@ jobs:
           echo "Built RPMs for ${{ matrix.arch }}:"
           ls -la output-${{ matrix.arch }}/
 
-          if [ \$(find output-${{ matrix.arch }} -name '*.rpm' | wc -l) -gt 0 ]; then
+          if [ $(find output-${{ matrix.arch }} -name '*.rpm' | wc -l) -gt 0 ]; then
             echo ""
             echo "RPM details:"
             for rpm in output-${{ matrix.arch }}/*.rpm; do

@@ -105,7 +105,7 @@ jobs:
           echo "Generated files:"
           ls -la output/
 
-          if [ \$(find output -name '*.rpm' | wc -l) -gt 0 ]; then
+          if [ $(find output -name '*.rpm' | wc -l) -gt 0 ]; then
             echo ""
             echo "RPM details:"
             for rpm in output/*.rpm; do
