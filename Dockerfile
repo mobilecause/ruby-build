@@ -63,7 +63,7 @@ USER root
 # Modify Ruby spec file to use OpenSSL 1.1 and remove problematic BuildRequires/macros
 RUN cd /home/builder && \
     cp rpmbuild/SPECS/ruby.spec rpmbuild/SPECS/ruby.spec.bak && \
-    sed -i 's|%configure|%configure --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include --with-static-linked-ext|' rpmbuild/SPECS/ruby.spec && \
+    sed -i 's|%configure|%configure --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include|' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*openssl-devel/d' rpmbuild/SPECS/ruby.spec && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
@@ -85,10 +85,10 @@ RUN dnf install -y dnf-plugins-core && \
 # Switch back to builder user
 USER builder
 
-# Build Ruby RPM with statically linked OpenSSL 1.1 (skip tests to avoid checksec issues)
+# Build Ruby RPM with OpenSSL 1.1 (skip tests to avoid checksec issues)
 RUN PKG_CONFIG_PATH="/usr/local/openssl11/lib/pkgconfig:/usr/lib64/pkgconfig" \
     LD_LIBRARY_PATH="/usr/local/openssl11/lib:$LD_LIBRARY_PATH" \
-    LDFLAGS="-L/usr/local/openssl11/lib /usr/local/openssl11/lib/libssl.a /usr/local/openssl11/lib/libcrypto.a -ldl -lz" \
+    LDFLAGS="-L/usr/local/openssl11/lib -Wl,-rpath,/usr/local/openssl11/lib" \
     CPPFLAGS="-I/usr/local/openssl11/include" \
     CFLAGS="-I/usr/local/openssl11/include" \
     rpmbuild -bb --nocheck rpmbuild/SPECS/ruby.spec
