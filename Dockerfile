@@ -66,7 +66,10 @@ RUN cd /home/builder && \
     sed -i 's|%configure|%configure --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include|' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*openssl-devel/d' rpmbuild/SPECS/ruby.spec && \
-    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
+    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
+    sed -i '/^%install$/a\\n# Copy OpenSSL 1.1 libraries\nmkdir -p %{buildroot}/usr/local/openssl11/lib\ncp -a /usr/local/openssl11/lib/libssl.so* %{buildroot}/usr/local/openssl11/lib/\ncp -a /usr/local/openssl11/lib/libcrypto.so* %{buildroot}/usr/local/openssl11/lib/\nmkdir -p %{buildroot}/etc/ld.so.conf.d\necho "/usr/local/openssl11/lib" > %{buildroot}/etc/ld.so.conf.d/openssl11.conf' rpmbuild/SPECS/ruby.spec && \
+    sed -i '/^%files libs$/a\/usr/local/openssl11/lib/libssl.so*\n/usr/local/openssl11/lib/libcrypto.so*\n/etc/ld.so.conf.d/openssl11.conf' rpmbuild/SPECS/ruby.spec && \
+    sed -i '/^%post libs$/a\/sbin/ldconfig' rpmbuild/SPECS/ruby.spec
 
 # Install additional build dependencies and create missing tools
 RUN dnf install -y --allowerasing checksec || true
