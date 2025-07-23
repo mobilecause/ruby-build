@@ -24,19 +24,16 @@ RUN dnf update -y && \
         cmake \
         gmp-devel \
         hostname \
-        procps-ng \
-        openssl-devel
+        procps-ng
 
-# Build and install OpenSSL 1.1.1 (required for Ruby 3.0.7)
+# Build OpenSSL 1.1.1 from source (for build-time only)
 RUN cd /tmp && \
     wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
     tar -xzf openssl-1.1.1w.tar.gz && \
     cd openssl-1.1.1w && \
     ./config --prefix=/usr/local/openssl11 --openssldir=/usr/local/openssl11 && \
     make -j$(nproc) && \
-    make install && \
-    echo "/usr/local/openssl11/lib" > /etc/ld.so.conf.d/openssl11.conf && \
-    ldconfig
+    make install
 
 # Create build user and setup RPM build environment
 RUN useradd -m builder && \
@@ -52,24 +49,20 @@ RUN wget https://dl.rockylinux.org/pub/rocky/9/devel/source/tree/Packages/r/ruby
 # Install source RPM to extract sources and spec file
 RUN rpm -ivh ruby-3.0.7-165.el9_5.src.rpm
 
-# Set environment variables for OpenSSL 1.1 (before user switch)
+# Set environment variables for custom OpenSSL 1.1
 ENV PKG_CONFIG_PATH="/usr/local/openssl11/lib/pkgconfig"
-ENV LDFLAGS="-L/usr/local/openssl11/lib"
 ENV CPPFLAGS="-I/usr/local/openssl11/include"
 
 # Switch back to root to modify spec and set up build environment
 USER root
 
-# Modify Ruby spec file to use OpenSSL 1.1 and remove problematic BuildRequires/macros
+# Modify Ruby spec file to use custom OpenSSL 1.1 and remove problematic BuildRequires/macros
 RUN cd /home/builder && \
     cp rpmbuild/SPECS/ruby.spec rpmbuild/SPECS/ruby.spec.bak && \
     sed -i 's|%configure|%configure --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include|' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*openssl-devel/d' rpmbuild/SPECS/ruby.spec && \
-    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%install$/a\\n# Copy OpenSSL 1.1 libraries\nmkdir -p %{buildroot}/usr/local/openssl11/lib\ncp -a /usr/local/openssl11/lib/libssl.so* %{buildroot}/usr/local/openssl11/lib/\ncp -a /usr/local/openssl11/lib/libcrypto.so* %{buildroot}/usr/local/openssl11/lib/\nmkdir -p %{buildroot}/etc/ld.so.conf.d\necho "/usr/local/openssl11/lib" > %{buildroot}/etc/ld.so.conf.d/openssl11.conf' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%files libs$/a\/usr/local/openssl11/lib/libssl.so*\n/usr/local/openssl11/lib/libcrypto.so*\n/etc/ld.so.conf.d/openssl11.conf' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%post libs$/a\/sbin/ldconfig' rpmbuild/SPECS/ruby.spec
+    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
 
 # Install additional build dependencies and create missing tools
 RUN dnf install -y --allowerasing checksec || true
@@ -88,13 +81,12 @@ RUN dnf install -y dnf-plugins-core && \
 # Switch back to builder user
 USER builder
 
-# Build Ruby RPM with OpenSSL 1.1 (skip tests to avoid checksec issues)
-RUN PKG_CONFIG_PATH="/usr/local/openssl11/lib/pkgconfig:/usr/lib64/pkgconfig" \
-    LD_LIBRARY_PATH="/usr/local/openssl11/lib:$LD_LIBRARY_PATH" \
-    LDFLAGS="-L/usr/local/openssl11/lib -Wl,-rpath,/usr/local/openssl11/lib" \
+# Build Ruby RPM with OpenSSL extension static linking (skip tests to avoid checksec issues)
+RUN PKG_CONFIG_PATH="/usr/local/openssl11/lib/pkgconfig" \
+    LDFLAGS="-L/usr/local/openssl11/lib /usr/local/openssl11/lib/libssl.a /usr/local/openssl11/lib/libcrypto.a -ldl -lz" \
     CPPFLAGS="-I/usr/local/openssl11/include" \
     CFLAGS="-I/usr/local/openssl11/include" \
-    rpmbuild -bb --nocheck rpmbuild/SPECS/ruby.spec
+    rpmbuild -bb --nocheck rpmbuild/SPECS/ruby.spec --define "ruby_configure_args --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include"
 
 # Create output directory and copy built RPMs
 RUN mkdir -p /home/builder/output && \
@@ -102,5 +94,57 @@ RUN mkdir -p /home/builder/output && \
 
 # List built packages
 RUN ls -la /home/builder/output/
+
+# Create OpenSSL 1.1 runtime package for installation
+USER root
+RUN mkdir -p /tmp/openssl11-rpm/{BUILD,RPMS,SOURCES,SPECS,SRPMS} && \
+    echo "Name: openssl11-runtime" > /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "Version: 1.1.1w" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo 'Release: 1%{?dist}' >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "Summary: OpenSSL 1.1.1 runtime libraries" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "License: OpenSSL" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "URL: https://www.openssl.org/" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "Provides: libssl.so.1.1()(64bit)" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "Provides: libcrypto.so.1.1()(64bit)" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%description" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "OpenSSL 1.1.1 runtime libraries for Ruby compatibility" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%prep" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%build" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%install" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo 'mkdir -p %{buildroot}/usr/local/openssl11/lib' >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo 'mkdir -p %{buildroot}/etc/ld.so.conf.d' >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo 'cp -a /usr/local/openssl11/lib/libssl.so* %{buildroot}/usr/local/openssl11/lib/' >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo 'cp -a /usr/local/openssl11/lib/libcrypto.so* %{buildroot}/usr/local/openssl11/lib/' >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo 'echo "/usr/local/openssl11/lib" > %{buildroot}/etc/ld.so.conf.d/openssl11.conf' >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%files" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "/usr/local/openssl11/lib/libssl.so*" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "/usr/local/openssl11/lib/libcrypto.so*" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "/etc/ld.so.conf.d/openssl11.conf" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%post" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "/sbin/ldconfig" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "%postun" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec && \
+    echo "/sbin/ldconfig" >> /tmp/openssl11-rpm/SPECS/openssl11-runtime.spec
+
+# Build OpenSSL runtime RPM and copy to output
+RUN cd /tmp/openssl11-rpm && \
+    rpmbuild --define "_topdir $(pwd)" -bb SPECS/openssl11-runtime.spec && \
+    cp RPMS/*/*.rpm /home/builder/output/
+
+# Test RPM installation with OpenSSL runtime package
+RUN echo "=== Testing RPM Installation ===" && \
+    dnf install -y /home/builder/output/openssl11-runtime-*.rpm /home/builder/output/ruby-libs-*.rpm /home/builder/output/ruby-3.0.7-*.rpm && \
+    echo "=== RPM Installation Successful ===" && \
+    echo "=== Testing Ruby Basic Functionality ===" && \
+    ruby --version && \
+    echo "=== Testing Ruby OpenSSL Support ===" && \
+    ruby -ropenssl -e "puts 'OpenSSL version: ' + OpenSSL::OPENSSL_VERSION; puts 'Ruby OpenSSL working!'" && \
+    echo "=== All Tests Passed ==="
 
 CMD ["/bin/bash"]
