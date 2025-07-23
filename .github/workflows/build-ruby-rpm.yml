@@ -9,9 +9,9 @@ on:
         default: 'both'
         type: choice
         options:
-        - both
-        - x86_64
-        - aarch64
+          - both
+          - x86_64
+          - aarch64
 
 jobs:
   build-rpm:
@@ -27,68 +27,74 @@ jobs:
     name: Build Ruby RPM (${{ matrix.arch }})
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Set up QEMU for multi-arch builds
-      uses: docker/setup-qemu-action@v3
-      with:
-        platforms: linux/amd64,linux/arm64
+      - name: Set up QEMU for multi-arch builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
-    - name: Build Ruby RPM Docker image
-      run: |
-        if [ "${{ matrix.arch }}" = "x86_64" ]; then
-          PLATFORM="linux/amd64"
-          TAG_SUFFIX="x86"
-        else
-          PLATFORM="linux/arm64"
-          TAG_SUFFIX="arm64"
-        fi
+      - name: Build Ruby RPM Docker image
+        run: |
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            PLATFORM="linux/amd64"
+            TAG_SUFFIX="x86"
+          else
+            PLATFORM="linux/arm64"
+            TAG_SUFFIX="arm64"
+          fi
+          
+          docker buildx build \
+            --platform $PLATFORM \
+            --load \
+            -t ruby-builder-$TAG_SUFFIX \
+            --build-arg TARGETARCH=${{ matrix.arch }} \
+            .
 
-        docker buildx build \
-          --platform $PLATFORM \
-          --load \
-          -t ruby-builder-$TAG_SUFFIX \
-          --build-arg TARGETARCH=${{ matrix.arch }} \
-          .
+      - name: Extract RPMs from container
+        run: |
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            TAG_SUFFIX="x86"
+          else
+            TAG_SUFFIX="arm64"
+          fi
+          
+          mkdir -p output-${{ matrix.arch }}
+          
+          docker run --rm \
+            -v $(pwd)/output-${{ matrix.arch }}:/output \
+            ruby-builder-$TAG_SUFFIX \
+            bash -c "
+              # Copy from the container's output directory (where they were placed in the Dockerfile)
+              cp /home/builder/output/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from output directory' || echo 'No RPMs in output directory'
+          
+              # Also try the traditional RPM build locations
+              cp /home/builder/rpmbuild/RPMS/*/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from rpmbuild' || echo 'No RPMs in rpmbuild'
+              cp /home/builder/rpmbuild/SRPMS/*.rpm /output/ 2>/dev/null || echo 'No source RPMs found'
+              cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || echo 'No modified spec found'
+              cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || echo 'No original spec found'
+          
+              echo 'Final output contents:'
+              ls -la /output/
+            "
 
-    - name: Extract RPMs from container
-      run: |
-        if [ "${{ matrix.arch }}" = "x86_64" ]; then
-          TAG_SUFFIX="x86"
-        else
-          TAG_SUFFIX="arm64"
-        fi
+      - name: List built RPMs
+        run: |
+          echo "Built RPMs for ${{ matrix.arch }}:"
+          ls -la output-${{ matrix.arch }}/
 
-        mkdir -p output-${{ matrix.arch }}
-
-        docker run --rm \
-          -v $(pwd)/output-${{ matrix.arch }}:/output \
-          ruby-builder-$TAG_SUFFIX \
-          bash -c "
-            cp -r /home/builder/rpmbuild/RPMS/*/*.rpm /output/ 2>/dev/null || true
-            cp -r /home/builder/rpmbuild/SRPMS/*.rpm /output/ 2>/dev/null || true
-            cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || true
-            cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || true
-            ls -la /output/
-          "
-
-    - name: List built RPMs
-      run: |
-        echo "Built RPMs for ${{ matrix.arch }}:"
-        ls -la output-${{ matrix.arch }}/
-
-    - name: Upload RPM artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ruby-3.0.7-rpms-${{ matrix.arch }}
-        path: |
-          output-${{ matrix.arch }}/*.rpm
-          output-${{ matrix.arch }}/*.spec
-        retention-days: 30
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby-3.0.7-rpms-${{ matrix.arch }}
+          path: |
+            output-${{ matrix.arch }}/*.rpm
+            output-${{ matrix.arch }}/*.spec
+          retention-days: 30
 
 
 
@@ -98,37 +104,37 @@ jobs:
     if: always()
 
     steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: all-artifacts
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
 
-    - name: Create build summary
-      run: |
-        echo "# Ruby 3.0.7 RPM Build Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## Built Packages" >> $GITHUB_STEP_SUMMARY
+      - name: Create build summary
+        run: |
+          echo "# Ruby 3.0.7 RPM Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Built Packages" >> $GITHUB_STEP_SUMMARY
+          
+          for arch_dir in all-artifacts/ruby-3.0.7-rpms-*; do
+            if [ -d "$arch_dir" ]; then
+              arch=$(basename "$arch_dir" | sed 's/ruby-3.0.7-rpms-//')
+              echo "### $arch Architecture" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              ls -la "$arch_dir"/ >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          
+          echo "## Key Features" >> $GITHUB_STEP_SUMMARY
+          echo "- Ruby 3.0.7 compiled with OpenSSL 1.1.1w support" >> $GITHUB_STEP_SUMMARY
+          echo "- Compatible with Amazon Linux 2023" >> $GITHUB_STEP_SUMMARY
+          echo "- Includes all standard Ruby gems and libraries" >> $GITHUB_STEP_SUMMARY
+          echo "- Debug packages available for troubleshooting" >> $GITHUB_STEP_SUMMARY
 
-        for arch_dir in all-artifacts/ruby-3.0.7-rpms-*; do
-          if [ -d "$arch_dir" ]; then
-            arch=$(basename "$arch_dir" | sed 's/ruby-3.0.7-rpms-//')
-            echo "### $arch Architecture" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            ls -la "$arch_dir"/ >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-        done
-
-        echo "## Key Features" >> $GITHUB_STEP_SUMMARY
-        echo "- Ruby 3.0.7 compiled with OpenSSL 1.1.1w support" >> $GITHUB_STEP_SUMMARY
-        echo "- Compatible with Amazon Linux 2023" >> $GITHUB_STEP_SUMMARY
-        echo "- Includes all standard Ruby gems and libraries" >> $GITHUB_STEP_SUMMARY
-        echo "- Debug packages available for troubleshooting" >> $GITHUB_STEP_SUMMARY
-
-    - name: Upload combined artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ruby-3.0.7-all-rpms
-        path: all-artifacts/
-        retention-days: 30
+      - name: Upload combined artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby-3.0.7-all-rpms
+          path: all-artifacts/
+          retention-days: 30

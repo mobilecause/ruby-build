@@ -9,69 +9,82 @@ on:
         default: 'x86_64'
         type: choice
         options:
-        - x86_64
-        - aarch64
+          - x86_64
+          - aarch64
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-    - name: Build Docker image
-      run: |
-        if [ "${{ github.event.inputs.arch }}" = "x86_64" ]; then
-          PLATFORM="linux/amd64"
-        else
-          PLATFORM="linux/arm64" 
-        fi
-        
-        echo "Building for platform: $PLATFORM"
-        
-        docker buildx build \
-          --platform $PLATFORM \
-          --load \
-          -t ruby-builder \
-          .
-
-    - name: Extract RPMs
-      run: |
-        mkdir -p output
-        
-        # Run container and extract files
-        docker run --rm -v $(pwd)/output:/output ruby-builder bash -c "
-          cp /home/builder/rpmbuild/RPMS/*/*.rpm /output/ 2>/dev/null || echo 'No binary RPMs found'
-          cp /home/builder/rpmbuild/SRPMS/*.rpm /output/ 2>/dev/null || echo 'No source RPMs found'  
-          cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || echo 'No modified spec found'
-          cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || echo 'No original spec found'
-          echo 'Files copied to output:'
-          ls -la /output/
-        "
-
-    - name: List output
-      run: |
-        echo "Generated files:"
-        ls -la output/
-        
-        echo "RPM details:"
-        for rpm in output/*.rpm; do
-          if [ -f "$rpm" ]; then
-            echo "=== $(basename $rpm) ==="
-            rpm -qp --info "$rpm" 2>/dev/null || echo "Could not read RPM info"
+      - name: Build Docker image
+        run: |
+          if [ "${{ github.event.inputs.arch }}" = "x86_64" ]; then
+            PLATFORM="linux/amd64"
+          else
+            PLATFORM="linux/arm64" 
           fi
-        done
+          
+          echo "Building for platform: $PLATFORM"
+          
+          docker buildx build \
+            --platform $PLATFORM \
+            --load \
+            -t ruby-builder \
+            .
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ruby-3.0.7-${{ github.event.inputs.arch }}-rpms
-        path: output/
-        retention-days: 7
+      - name: Extract RPMs
+        run: |
+          mkdir -p output
+          
+          # Run container and extract files
+          docker run --rm -v $(pwd)/output:/output ruby-builder bash -c "
+            # Check what's actually in the container
+            echo 'Container contents:'
+            ls -la /home/builder/
+            echo 'RPM build output:'
+            ls -la /home/builder/output/ 2>/dev/null || echo 'No output directory found'
+            echo 'RPMS directory:'
+            ls -la /home/builder/rpmbuild/RPMS/ 2>/dev/null || echo 'No RPMS directory found'
+          
+            # Copy from the container's output directory (where they were placed in the Dockerfile)
+            cp /home/builder/output/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from output directory' || echo 'No RPMs in output directory'
+          
+            # Also try the traditional RPM build locations
+            cp /home/builder/rpmbuild/RPMS/*/*.rpm /output/ 2>/dev/null && echo 'Copied RPMs from rpmbuild' || echo 'No RPMs in rpmbuild'
+            cp /home/builder/rpmbuild/SRPMS/*.rpm /output/ 2>/dev/null || echo 'No source RPMs found'  
+            cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || echo 'No modified spec found'
+            cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || echo 'No original spec found'
+          
+            echo 'Final output contents:'
+            ls -la /output/
+          "
+
+      - name: List output
+        run: |
+          echo "Generated files:"
+          ls -la output/
+          
+          echo "RPM details:"
+          for rpm in output/*.rpm; do
+            if [ -f "$rpm" ]; then
+              echo "=== $(basename $rpm) ==="
+              rpm -qp --info "$rpm" 2>/dev/null || echo "Could not read RPM info"
+            fi
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby-3.0.7-${{ github.event.inputs.arch }}-rpms
+          path: output/
+          retention-days: 7
