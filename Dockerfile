@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 amazonlinux:latest
+FROM amazonlinux:latest
 
 # Update system and install development tools
 RUN dnf update -y && \

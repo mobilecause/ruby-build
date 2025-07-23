@@ -66,49 +66,58 @@ jobs:
             TAG_SUFFIX="arm64"
           fi
 
-          # Run container and extract files using the correct tag
-          docker run --rm -v $(pwd)/output-${{ matrix.arch }}:/output ruby-builder-$TAG_SUFFIX bash -c "
-            # Check what's actually in the container
+          # Get current user ID to fix permissions
+          USER_ID=$(id -u)
+          GROUP_ID=$(id -g)
+
+          # Run container and extract files using the correct tag and proper permissions
+          docker run --rm \
+            --user root \
+            -v $(pwd)/output-${{ matrix.arch }}:/output \
+            ruby-builder-$TAG_SUFFIX bash -c "
+
             echo 'Container contents:'
             ls -la /home/builder/
+            echo ''
             echo 'RPM build output:'
             ls -la /home/builder/output/ 2>/dev/null || echo 'No output directory found'
             echo 'RPMS directory:'
             ls -la /home/builder/rpmbuild/RPMS/ 2>/dev/null || echo 'No RPMS directory found'
+            echo ''
 
-            # Copy from the container's output directory using find to avoid glob issues
-            if [ -d '/home/builder/output' ]; then
-              find /home/builder/output -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
-              if [ \$? -eq 0 ]; then
-                echo 'Copied RPMs from output directory'
-              else
-                echo 'No RPMs in output directory'
-              fi
+            # Copy all RPMs from output directory
+            if [ -d '/home/builder/output' ] && [ \$(find /home/builder/output -name '*.rpm' | wc -l) -gt 0 ]; then
+              echo 'Copying RPMs from output directory...'
+              cp /home/builder/output/*.rpm /output/ 2>/dev/null || true
+              echo 'Copied RPMs from output directory'
             fi
 
-            # Also try the traditional RPM build locations
+            # Also copy from traditional RPM build locations as backup
             if [ -d '/home/builder/rpmbuild/RPMS' ]; then
-              find /home/builder/rpmbuild/RPMS -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
-              if [ \$? -eq 0 ]; then
-                echo 'Copied RPMs from rpmbuild'
-              else
-                echo 'No RPMs in rpmbuild'
-              fi
+              echo 'Copying from rpmbuild RPMS...'
+              find /home/builder/rpmbuild/RPMS -name '*.rpm' -exec cp {} /output/ \; 2>/dev/null || true
             fi
 
             if [ -d '/home/builder/rpmbuild/SRPMS' ]; then
-              find /home/builder/rpmbuild/SRPMS -name '*.rpm' -type f -exec cp {} /output/ \; 2>/dev/null
-              if [ \$? -eq 0 ]; then
-                echo 'Copied source RPMs'
-              else
-                echo 'No source RPMs found'
-              fi
+              echo 'Copying source RPMs...'
+              find /home/builder/rpmbuild/SRPMS -name '*.rpm' -exec cp {} /output/ \; 2>/dev/null || true
             fi
 
             # Copy spec files if they exist
-            [ -f '/home/builder/rpmbuild/SPECS/ruby.spec' ] && cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec && echo 'Copied modified spec' || echo 'No modified spec found'
-            [ -f '/home/builder/rpmbuild/SPECS/ruby.spec.bak' ] && cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec && echo 'Copied original spec' || echo 'No original spec found'
+            if [ -f '/home/builder/rpmbuild/SPECS/ruby.spec' ]; then
+              cp /home/builder/rpmbuild/SPECS/ruby.spec /output/ruby-modified.spec 2>/dev/null || true
+              echo 'Copied modified spec'
+            fi
 
+            if [ -f '/home/builder/rpmbuild/SPECS/ruby.spec.bak' ]; then
+              cp /home/builder/rpmbuild/SPECS/ruby.spec.bak /output/ruby-original.spec 2>/dev/null || true
+              echo 'Copied original spec'
+            fi
+
+            # Fix ownership of copied files
+            chown -R $USER_ID:$GROUP_ID /output/ 2>/dev/null || true
+
+            echo ''
             echo 'Final output contents:'
             ls -la /output/
           "
@@ -118,22 +127,27 @@ jobs:
           echo "Built RPMs for ${{ matrix.arch }}:"
           ls -la output-${{ matrix.arch }}/
 
-          echo "RPM details:"
-          for rpm in output-${{ matrix.arch }}/*.rpm; do
-            if [ -f "$rpm" ]; then
-              echo "=== $(basename $rpm) ==="
-              rpm -qp --info "$rpm" 2>/dev/null || echo "Could not read RPM info"
-            fi
-          done
+          if [ \$(find output-${{ matrix.arch }} -name '*.rpm' | wc -l) -gt 0 ]; then
+            echo ""
+            echo "RPM details:"
+            for rpm in output-${{ matrix.arch }}/*.rpm; do
+              if [ -f "$rpm" ]; then
+                echo "=== $(basename $rpm) ==="
+                rpm -qp --info "$rpm" 2>/dev/null || echo "Could not read RPM info for $rpm"
+                echo ""
+              fi
+            done
+          else
+            echo "No RPM files found in output directory"
+          fi
 
       - name: Upload RPM artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ruby-3.0.7-rpms-${{ matrix.arch }}
-          path: |
-            output-${{ matrix.arch }}/*.rpm
-            output-${{ matrix.arch }}/*.spec
+          path: output-${{ matrix.arch }}/
           retention-days: 30
+        if: always()
 
   summary:
     needs: build-rpm
