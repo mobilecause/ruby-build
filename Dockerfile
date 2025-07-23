@@ -76,8 +76,9 @@ RUN if [ ! -f /usr/bin/multilib-rpm-config ]; then \
         chmod +x /usr/bin/multilib-rpm-config; \
     fi
 
-# Install dependencies from Ruby spec file
-RUN cd /home/builder && \
+# Install dnf-plugins-core for builddep and install dependencies from Ruby spec file
+RUN dnf install -y dnf-plugins-core && \
+    cd /home/builder && \
     dnf builddep -y rpmbuild/SPECS/ruby.spec || \
     (grep "BuildRequires:" rpmbuild/SPECS/ruby.spec | sed 's/BuildRequires://g' | sed 's/,/ /g' | xargs dnf install -y --allowerasing || true)
 
