@@ -138,8 +138,13 @@ RUN cd /tmp/openssl11-rpm && \
     cp RPMS/*/*.rpm /home/builder/output/
 
 # Test RPM installation with OpenSSL runtime package
-RUN echo "=== Testing RPM Installation ===" && \
-    dnf install -y /home/builder/output/openssl11-runtime-*.rpm /home/builder/output/ruby-libs-*.rpm /home/builder/output/ruby-3.0.7-*.rpm && \
+RUN echo "=== Removing ALL Ruby packages completely ===" && \
+    dnf remove -y ruby* rubygems* --skip-broken || true && \
+    dnf clean all && \
+    echo "=== Installing only specific Ruby RPMs ===" && \
+    rpm -ivh --force /home/builder/output/openssl11-runtime-*.rpm && \
+    rpm -ivh --force --nodeps /home/builder/output/ruby-libs-*.rpm && \
+    rpm -ivh --force --nodeps /home/builder/output/ruby-3.0.7-*.rpm && \
     echo "=== RPM Installation Successful ===" && \
     echo "=== Testing Ruby Basic Functionality ===" && \
     ruby --version && \
