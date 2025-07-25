@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO_URL="https://raw.githubusercontent.com/mobilecause/ruby-build/main"
+REPO_URL="https://raw.githubusercontent.com/USERNAME/REPOSITORY/main"
 
 echo "Installing Ruby 3.0.7 repository..."
 
