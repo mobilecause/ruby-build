@@ -75,24 +75,24 @@ RUN cd /home/builder && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
 
 # Create FIPS fix patch and add to Ruby spec
-RUN cd /home/builder && \
-    echo "=== Creating FIPS preprocessor fix patch ===" && \
-    echo "--- a/ext/openssl/ossl.c" > rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "+++ b/ext/openssl/ossl.c" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "@@ -409,7 +409,7 @@" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo " #ifdef OPENSSL_FIPS" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qtrue);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "-#elif OPENSSL_FIPS" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "+#elif defined(OPENSSL_FIPS)" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qfalse);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo " #else" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
-    echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qfalse);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch
+# RUN cd /home/builder && \
+#     echo "=== Creating FIPS preprocessor fix patch ===" && \
+#     echo "--- a/ext/openssl/ossl.c" > rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "+++ b/ext/openssl/ossl.c" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "@@ -409,7 +409,7 @@" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo " #ifdef OPENSSL_FIPS" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qtrue);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "-#elif OPENSSL_FIPS" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "+#elif defined(OPENSSL_FIPS)" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qfalse);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo " #else" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+#     echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qfalse);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch
 
 # Add patch to spec file
-RUN cd /home/builder && \
-    echo "=== Adding FIPS patch to Ruby spec file ===" && \
-    sed -i '/^Source[0-9]*:/a Patch1000: ruby-openssl-fips-fix.patch' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%prep/a %patch1000 -p1' rpmbuild/SPECS/ruby.spec
+# RUN cd /home/builder && \
+#     echo "=== Adding FIPS patch to Ruby spec file ===" && \
+#     sed -i '/^Source[0-9]*:/a Patch1000: ruby-openssl-fips-fix.patch' rpmbuild/SPECS/ruby.spec && \
+#     sed -i '/^%prep/a %patch1000 -p1' rpmbuild/SPECS/ruby.spec
 
 # Install additional build dependencies and create missing tools
 USER root
