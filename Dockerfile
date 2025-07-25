@@ -159,10 +159,16 @@ RUN echo "=== Creating ruby3-0-7 repository structure ===" && \
     mkdir -p /home/builder/ruby3-0-7/client-setup && \
     echo "=== Copying x86_64 and noarch RPM packages ===" && \
     find /home/builder/output -name '*x86_64.rpm' -exec cp {} /home/builder/ruby3-0-7/rpm-repo/x86_64/ \; 2>/dev/null || true && \
-    find /home/builder/output -name '*noarch.rpm' -exec cp {} /home/builder/ruby3-0-7/rpm-repo/x86_64/ \; 2>/dev/null || true && \
-    echo "=== Installing createrepo_c ===" && \
-    sudo dnf install -y createrepo_c && \
-    echo "=== Generating repository metadata ===" && \
+    find /home/builder/output -name '*noarch.rpm' -exec cp {} /home/builder/ruby3-0-7/rpm-repo/x86_64/ \; 2>/dev/null || true
+
+# Switch to root to install createrepo_c
+USER root
+RUN echo "=== Installing createrepo_c ===" && \
+    dnf install -y createrepo_c
+
+# Switch back to builder and continue repository creation
+USER builder
+RUN echo "=== Generating repository metadata ===" && \
     createrepo_c /home/builder/ruby3-0-7/rpm-repo/x86_64/ && \
     echo "=== Creating client setup files ===" && \
     echo '[ruby-build-3-0-7]' > /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
