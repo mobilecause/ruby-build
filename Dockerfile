@@ -69,7 +69,7 @@ RUN echo "=== Installing built compat-openssl11 packages ===" && \
 USER builder
 RUN cd /home/builder && \
     cp rpmbuild/SPECS/ruby.spec rpmbuild/SPECS/ruby.spec.bak && \
-    sed -i 's|%configure|%configure --with-openssl-dir=/usr --with-openssl-lib=/usr/lib64/openssl11 --with-openssl-include=/usr/include/openssl11|' rpmbuild/SPECS/ruby.spec && \
+    sed -i 's|%configure|%configure --with-openssl-dir=%{_includedir}/openssl11 --with-openssl-lib=%{_libdir}/openssl11 --with-openssl-include=%{_includedir}/openssl11|' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i 's/BuildRequires:.*openssl-devel/BuildRequires: compat-openssl11-devel/' rpmbuild/SPECS/ruby.spec && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
@@ -115,7 +115,7 @@ RUN echo "=== Building Ruby with compat-openssl11 ===" && \
     LDFLAGS="-L/usr/lib64/openssl11" \
     CPPFLAGS="-I/usr/include/openssl11" \
     CFLAGS="-I/usr/include/openssl11" \
-    rpmbuild -bb --nocheck rpmbuild/SPECS/ruby.spec --define "ruby_configure_args --with-openssl-dir=/usr --with-openssl-lib=/usr/lib64/openssl11 --with-openssl-include=/usr/include/openssl11"
+    rpmbuild -bb --nocheck rpmbuild/SPECS/ruby.spec
 
 # Create unified output directory with all RPMs
 RUN echo "=== Creating unified output directory ===" && \
