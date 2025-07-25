@@ -1,6 +1,6 @@
 [ruby-build-3-0-7]
 name=Ruby 3.0.7 Build Repository
-baseurl=https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/ruby3-0-7/rpm-repo/x86_64/
+baseurl=https://raw.githubusercontent.com/mobilecause/ruby-build/main/ruby3-0-7/rpm-repo/x86_64/
 enabled=1
 gpgcheck=0
 metadata_expire=300
