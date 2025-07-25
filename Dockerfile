@@ -145,6 +145,8 @@ RUN echo "=== Testing RPM installation ===" && \
     echo "=== Installing Ruby packages ===" && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-libs-*.rpm && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-3.0.7-*.rpm && \
+    echo "=== Setting up Ruby alternatives ===" && \
+    update-alternatives --install /usr/bin/ruby ruby /usr/bin/ruby-mri 10 && \
     echo "=== Testing Ruby functionality ===" && \
     ruby --version && \
     echo "=== Testing Ruby OpenSSL support ===" && \
