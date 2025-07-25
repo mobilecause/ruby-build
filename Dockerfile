@@ -73,7 +73,7 @@ RUN cd /home/builder && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i 's/BuildRequires:.*openssl-devel/BuildRequires: compat-openssl11-devel/' rpmbuild/SPECS/ruby.spec && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%prep/a\\n# Fix OPENSSL_FIPS preprocessor syntax\ncd %{_builddir}/ruby-%{version}/ext/openssl\nsed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" ossl.c' rpmbuild/SPECS/ruby.spec
+    sed -i '/^%prep/a\\n# Fix OPENSSL_FIPS preprocessor syntax\ncd %{_builddir}/ruby-3.0.7/ext/openssl\nsed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" ossl.c' rpmbuild/SPECS/ruby.spec
 
 # Create FIPS fix patch and add to Ruby spec
 # RUN cd /home/builder && \
