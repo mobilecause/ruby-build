@@ -174,7 +174,7 @@ RUN echo "=== Generating repository metadata ===" && \
     echo "=== Creating client setup files ===" && \
     echo '[ruby-build-3-0-7]' > /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo 'name=Ruby 3.0.7 Build Repository' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
-    echo 'baseurl=https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/ruby3-0-7/rpm-repo/x86_64/' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'baseurl=https://raw.githubusercontent.com/mobilecause/ruby-build/main/ruby3-0-7/rpm-repo/x86_64/' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo 'enabled=1' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo 'gpgcheck=0' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo 'metadata_expire=300' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
