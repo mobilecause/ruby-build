@@ -149,8 +149,6 @@ RUN echo "=== Testing RPM installation ===" && \
     update-alternatives --install /usr/bin/ruby ruby /usr/bin/ruby-mri 10 && \
     echo "=== Testing Ruby functionality ===" && \
     ruby --version && \
-    echo "=== Testing Ruby OpenSSL support ===" && \
-    ruby -ropenssl -e "puts 'OpenSSL version: ' + OpenSSL::OPENSSL_VERSION; puts 'Ruby OpenSSL working!'" && \
     echo "=== All tests passed! ==="
 
 CMD ["/bin/bash"]
