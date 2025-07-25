@@ -171,3 +171,11 @@ jobs:
           path: ruby3-0-7-complete/ruby3-0-7/
           retention-days: 10
         if: always()
+
+      - name: Upload Individual RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby-3.0.7-x86_64-rpms
+          path: output/
+          retention-days: 7
+        if: always()
