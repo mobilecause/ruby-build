@@ -76,7 +76,7 @@ RUN cd /home/builder && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
     sed -i '/^%build/a\\n# Fix OPENSSL_FIPS preprocessor syntax\nfind . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" {} \\;' rpmbuild/SPECS/ruby.spec && \
     sed -i '/^%make_install$/a\\n# Create /usr/bin/ruby symlink\nln -sf %{_bindir}/ruby-mri %{buildroot}%{_bindir}/ruby' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%files$/{n; a\%{_bindir}/ruby' -e '}' rpmbuild/SPECS/ruby.spec
+    sed -i '/^%files$/a\%{_bindir}/ruby' rpmbuild/SPECS/ruby.spec
 
 # Create FIPS fix patch and add to Ruby spec
 # RUN cd /home/builder && \
