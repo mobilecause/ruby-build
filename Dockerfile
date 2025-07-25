@@ -74,7 +74,9 @@ RUN cd /home/builder && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i 's/BuildRequires:.*openssl-devel/BuildRequires: compat-openssl11-devel/' rpmbuild/SPECS/ruby.spec && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%build/a\\n# Fix OPENSSL_FIPS preprocessor syntax\nfind . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" {} \\;' rpmbuild/SPECS/ruby.spec
+    sed -i '/^%build/a\\n# Fix OPENSSL_FIPS preprocessor syntax\nfind . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" {} \\;' rpmbuild/SPECS/ruby.spec && \
+    sed -i '/^%make_install$/a\\n# Create /usr/bin/ruby symlink\nln -sf %{_bindir}/ruby-mri %{buildroot}%{_bindir}/ruby' rpmbuild/SPECS/ruby.spec && \
+    sed -i '/^%files$/{n; a\%{_bindir}/ruby' -e '}' rpmbuild/SPECS/ruby.spec
 
 # Create FIPS fix patch and add to Ruby spec
 # RUN cd /home/builder && \
@@ -148,6 +150,8 @@ RUN echo "=== Testing RPM installation ===" && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-3.0.7-*.rpm && \
     echo "=== Setting up Ruby alternatives ===" && \
     update-alternatives --install /usr/bin/ruby ruby /usr/bin/ruby-mri 10 && \
+    echo "=== Creating /usr/bin/ruby symlink ===" && \
+    ln -sf /usr/bin/ruby-mri /usr/bin/ruby && \
     echo "=== Testing Ruby functionality ===" && \
     ruby --version && \
     echo "=== All tests passed! ==="
@@ -186,7 +190,7 @@ RUN echo "=== Generating repository metadata ===" && \
     echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo 'echo "Installing Ruby 3.0.7 repository..."' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
-    echo '# Download repo config with priority=70' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '# Download repo config with priority=9' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo 'curl -fsSL "$REPO_URL/ruby3-0-7/client-setup/ruby-build.repo" \\' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo '    -o "/etc/yum.repos.d/ruby-build-3-0-7.repo"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
@@ -194,7 +198,7 @@ RUN echo "=== Generating repository metadata ===" && \
     echo 'dnf clean all' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo 'dnf makecache' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
-    echo 'echo "✅ Ruby 3.0.7 repository installed with priority 70!"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'echo "✅ Ruby 3.0.7 repository installed with priority 9!"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo 'echo "📦 Install Ruby: dnf install ruby compat-openssl11"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo 'echo "🔍 Verify source: dnf info ruby"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
     chmod +x /home/builder/ruby3-0-7/client-setup/install.sh && \

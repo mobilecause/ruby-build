@@ -4,4 +4,4 @@ baseurl=https://raw.githubusercontent.com/mobilecause/ruby-build/main/ruby3-0-7/
 enabled=1
 gpgcheck=0
 metadata_expire=300
-priority=70
+priority=9

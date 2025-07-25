@@ -188,9 +188,9 @@ sudo dnf makecache
 ```
 
 #### Repository Priority Explanation
-The repository is configured with `priority=70`, which means:
+The repository is configured with `priority=9`, which means:
 - **Lower number = Higher priority**
-- Amazon Linux default repos typically have priority ~99
+- Amazon Linux default repos typically have priority 10
 - Your Ruby packages will be preferred over Amazon Linux Ruby packages
 - System-critical repos (priority 1-50) still take precedence
 
