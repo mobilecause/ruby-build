@@ -65,23 +65,34 @@ RUN echo "=== Installing built compat-openssl11 packages ===" && \
     ls -la /usr/lib64/openssl11/ && \
     ls -la /usr/include/openssl11/ \
 
-# Fix Ruby OpenSSL extension FIPS preprocessor syntax error
-USER builder
-RUN cd /home/builder && \
-    echo "=== Fixing OPENSSL_FIPS preprocessor syntax error ===" && \
-    find rpmbuild/BUILD -name "ossl.c" -exec sed -i 's/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS) \&\& OPENSSL_FIPS/g' {} \; 2>/dev/null || true && \
-    find rpmbuild/SOURCES -name "*.tar.*" -exec tar -tf {} \; 2>/dev/null | grep -q "ext/openssl/ossl.c" && \
-    echo "=== Will patch ossl.c during build ===" || echo "=== No ossl.c found in sources ==="
-
 # Modify Ruby spec file to use compat-openssl11 and add FIPS patch
+USER builder
 RUN cd /home/builder && \
     cp rpmbuild/SPECS/ruby.spec rpmbuild/SPECS/ruby.spec.bak && \
     sed -i 's|%configure|%configure --with-openssl-dir=/usr --with-openssl-lib=/usr/lib64/openssl11 --with-openssl-include=/usr/include/openssl11|' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i 's/BuildRequires:.*openssl-devel/BuildRequires: compat-openssl11-devel/' rpmbuild/SPECS/ruby.spec && \
-    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
-    echo "=== Adding FIPS patch to spec file ===" && \
-    sed -i '/^%build/a\\n# Fix OPENSSL_FIPS preprocessor syntax\nfind . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS) \\&\\& OPENSSL_FIPS/g" {} \\;' rpmbuild/SPECS/ruby.spec
+    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
+
+# Create FIPS fix patch and add to Ruby spec
+RUN cd /home/builder && \
+    echo "=== Creating FIPS preprocessor fix patch ===" && \
+    echo "--- a/ext/openssl/ossl.c" > rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "+++ b/ext/openssl/ossl.c" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "@@ -409,7 +409,7 @@" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo " #ifdef OPENSSL_FIPS" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qtrue);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "-#elif OPENSSL_FIPS" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "+#elif defined(OPENSSL_FIPS)" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qfalse);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo " #else" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch && \
+    echo "     rb_define_const(mOSSL, \"OPENSSL_FIPS\", Qfalse);" >> rpmbuild/SOURCES/ruby-openssl-fips-fix.patch
+
+# Add patch to spec file
+RUN cd /home/builder && \
+    echo "=== Adding FIPS patch to Ruby spec file ===" && \
+    sed -i '/^Source[0-9]*:/a Patch1000: ruby-openssl-fips-fix.patch' rpmbuild/SPECS/ruby.spec && \
+    sed -i '/^%prep/a %patch1000 -p1' rpmbuild/SPECS/ruby.spec
 
 # Install additional build dependencies and create missing tools
 USER root
