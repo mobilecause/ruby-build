@@ -142,8 +142,6 @@ RUN echo "=== Testing RPM installation ===" && \
     echo "=== Testing compat-openssl11 installation ===" && \
     ls -la /usr/lib64/openssl11/ && \
     ls -la /usr/include/openssl11/ && \
-    ldd /usr/lib64/openssl11/libssl.so.1.1 && \
-    ldd /usr/lib64/openssl11/libcrypto.so.1.1 && \
     echo "=== Installing Ruby packages ===" && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-libs-*.rpm && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-3.0.7-*.rpm && \
