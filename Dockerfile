@@ -12,6 +12,7 @@ RUN dnf update -y && \
         readline-devel \
         libffi-devel \
         libyaml-devel \
+        zlib-devel \
         gdbm-devel \
         ncurses-devel \
         tk-devel \
