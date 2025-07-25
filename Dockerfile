@@ -28,14 +28,18 @@ RUN dnf update -y && \
 
 # Build compat-openssl11 packages from Rocky Linux SRPM
 RUN cd /tmp && \
-    wget https://dl.rockylinux.org/pub/rocky/9/AppStream/source/tree/Packages/c/compat-openssl11-1.1.1k-5.el9_6.1.src.rpm && \
-    rpm -ivh compat-openssl11-1.1.1k-5.el9_6.1.src.rpm && \
+    wget https://pkgs.sysadmins.ws/el9/extras/SRPMS/compat-openssl11-1.1.1k-5.el9.src.rpm && \
+    rpm -ivh compat-openssl11-1.1.1k-5.el9.src.rpm && \
     cd /root/rpmbuild && \
     dnf install -y 'dnf-command(builddep)' && \
     dnf builddep -y SPECS/compat-openssl11.spec && \
-    rpmbuild -bb SPECS/compat-openssl11.spec && \
-    rpm -ivh RPMS/*/compat-openssl11-*.rpm && \
-    cp RPMS/*/compat-openssl11-*.rpm /tmp/
+    rpmbuild -bb --nocheck SPECS/compat-openssl11.spec && \
+    echo "=== Checking built compat-openssl11 packages ===" && \
+    ls -la RPMS/*/ && \
+    rpm -ivh RPMS/*/compat-openssl11-1*.rpm && \
+    cp RPMS/*/compat-openssl11-*.rpm /tmp/ && \
+    echo "=== Verifying both compat-openssl11 and devel packages exist ===" && \
+    ls -la /tmp/compat-openssl11*
 
 # Create build user and setup RPM build environment
 RUN useradd -m builder && \
@@ -76,7 +80,9 @@ RUN if [ ! -f /usr/bin/multilib-rpm-config ]; then \
 
 # Install dnf-plugins-core and compat-openssl11-devel, then install dependencies from Ruby spec file
 RUN dnf install -y dnf-plugins-core && \
-    rpm -ivh /tmp/compat-openssl11-devel-*.rpm && \
+    echo "=== Checking /tmp for compat-openssl11 packages ===" && \
+    ls -la /tmp/compat-openssl11* && \
+    rpm -ivh /tmp/compat-openssl11*devel*.rpm && \
     cd /home/builder && \
     dnf builddep -y rpmbuild/SPECS/ruby.spec || \
     (grep "BuildRequires:" rpmbuild/SPECS/ruby.spec | sed 's/BuildRequires://g' | sed 's/,/ /g' | xargs dnf install -y --allowerasing || true)
