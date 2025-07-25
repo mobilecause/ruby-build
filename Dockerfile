@@ -75,8 +75,7 @@ RUN cd /home/builder && \
     sed -i 's/BuildRequires:.*openssl-devel/BuildRequires: compat-openssl11-devel/' rpmbuild/SPECS/ruby.spec && \
     sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
     sed -i '/^%build/a\\n# Fix OPENSSL_FIPS preprocessor syntax\nfind . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" {} \\;' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%make_install$/a\\n# Create /usr/bin/ruby symlink\nln -sf %{_bindir}/ruby-mri %{buildroot}%{_bindir}/ruby' rpmbuild/SPECS/ruby.spec && \
-    sed -i '/^%files$/a\%{_bindir}/ruby' rpmbuild/SPECS/ruby.spec
+    sed -i 's/%bcond_without rubypick/%bcond_with rubypick/' rpmbuild/SPECS/ruby.spec
 
 # Create FIPS fix patch and add to Ruby spec
 # RUN cd /home/builder && \
@@ -148,10 +147,8 @@ RUN echo "=== Testing RPM installation ===" && \
     echo "=== Installing Ruby packages ===" && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-libs-*.rpm && \
     rpm -ivh --force --nodeps /home/builder/output/ruby-3.0.7-*.rpm && \
-    echo "=== Setting up Ruby alternatives ===" && \
-    update-alternatives --install /usr/bin/ruby ruby /usr/bin/ruby-mri 10 && \
-    echo "=== Creating /usr/bin/ruby symlink ===" && \
-    ln -sf /usr/bin/ruby-mri /usr/bin/ruby && \
+    echo "=== Testing Ruby binary location ===" && \
+    ls -la /usr/bin/ruby* && \
     echo "=== Testing Ruby functionality ===" && \
     ruby --version && \
     echo "=== All tests passed! ==="
