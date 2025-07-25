@@ -63,16 +63,25 @@ RUN echo "=== Installing built compat-openssl11 packages ===" && \
     rpm -ivh /home/builder/rpmbuild/RPMS/*/compat-openssl11-*.rpm && \
     echo "=== Verifying compat-openssl11 installation ===" && \
     ls -la /usr/lib64/openssl11/ && \
-    ls -la /usr/include/openssl11/
+    ls -la /usr/include/openssl11/ \
 
-# Modify Ruby spec file to use compat-openssl11
+# Fix Ruby OpenSSL extension FIPS preprocessor syntax error
 USER builder
+RUN cd /home/builder && \
+    echo "=== Fixing OPENSSL_FIPS preprocessor syntax error ===" && \
+    find rpmbuild/BUILD -name "ossl.c" -exec sed -i 's/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS) \&\& OPENSSL_FIPS/g' {} \; 2>/dev/null || true && \
+    find rpmbuild/SOURCES -name "*.tar.*" -exec tar -tf {} \; 2>/dev/null | grep -q "ext/openssl/ossl.c" && \
+    echo "=== Will patch ossl.c during build ===" || echo "=== No ossl.c found in sources ==="
+
+# Modify Ruby spec file to use compat-openssl11 and add FIPS patch
 RUN cd /home/builder && \
     cp rpmbuild/SPECS/ruby.spec rpmbuild/SPECS/ruby.spec.bak && \
     sed -i 's|%configure|%configure --with-openssl-dir=/usr --with-openssl-lib=/usr/lib64/openssl11 --with-openssl-include=/usr/include/openssl11|' rpmbuild/SPECS/ruby.spec && \
     sed -i '/BuildRequires:.*multilib-rpm-config/d' rpmbuild/SPECS/ruby.spec && \
     sed -i 's/BuildRequires:.*openssl-devel/BuildRequires: compat-openssl11-devel/' rpmbuild/SPECS/ruby.spec && \
-    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec
+    sed -i 's|%multilib_fix_c_header.*||g' rpmbuild/SPECS/ruby.spec && \
+    echo "=== Adding FIPS patch to spec file ===" && \
+    sed -i '/^%build/a\\n# Fix OPENSSL_FIPS preprocessor syntax\nfind . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS) \\&\\& OPENSSL_FIPS/g" {} \\;' rpmbuild/SPECS/ruby.spec
 
 # Install additional build dependencies and create missing tools
 USER root
