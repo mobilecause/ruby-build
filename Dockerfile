@@ -178,7 +178,7 @@ RUN echo "=== Generating repository metadata ===" && \
     echo 'enabled=1' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo 'gpgcheck=0' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo 'metadata_expire=300' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
-    echo 'priority=70' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'priority=9' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
     echo "=== Creating installation script ===" && \
     echo '#!/bin/bash' > /home/builder/ruby3-0-7/client-setup/install.sh && \
     echo 'set -e' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
