@@ -351,6 +351,7 @@ BuildRequires:        autoconf
 BuildRequires:        gdbm-devel
 %{?with_gmp:BuildRequires: gmp-devel}
 BuildRequires:        libffi-devel
+BuildRequires: compat-openssl11-devel
 BuildRequires:        libyaml-devel
 BuildRequires:        readline-devel
 # Needed to pass test_set_program_name(TestRubyOptions)
@@ -832,9 +833,12 @@ cp -a %{SOURCE3} .
 %patch -P79 -p1
 
 %build
+
+# Fix OPENSSL_FIPS preprocessor syntax
+find . -name "ossl.c" -exec sed -i "s/#elif OPENSSL_FIPS/#elif defined(OPENSSL_FIPS)/g" {} \;
 autoconf
 
-%configure --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include \
+%configure --with-openssl-dir=%{_includedir}/openssl11 --with-openssl-lib=%{_libdir}/openssl11 --with-openssl-include=%{_includedir}/openssl11 \
         --with-rubylibprefix='%{ruby_libdir}' \
         --with-archlibdir='%{_libdir}' \
         --with-rubyarchprefix='%{ruby_libarchdir}' \
@@ -2964,7 +2968,7 @@ make runruby TESTRUN_SCRIPT=" \
 - rebuild to fix broken tcltk deps
 
 * Tue Oct 22 2002 Akira TAGOH <tagoh@redhat.com> 1.6.7-11
-- use %%configure --with-openssl-dir=/usr/local/openssl11 --with-openssl-lib=/usr/local/openssl11/lib --with-openssl-include=/usr/local/openssl11/include macro instead of configure script.
+- use %%configure --with-openssl-dir=%{_includedir}/openssl11 --with-openssl-lib=%{_libdir}/openssl11 --with-openssl-include=%{_includedir}/openssl11 macro instead of configure script.
 - use the latest config.{sub,guess}.
 - get archname from rbconfig.rb for %%dir
 - applied some patches from Debian:
