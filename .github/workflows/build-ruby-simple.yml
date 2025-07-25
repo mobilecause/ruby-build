@@ -2,15 +2,6 @@ name: Build Ruby RPM (Simple)
 
 on:
   workflow_dispatch:
-    inputs:
-      arch:
-        description: 'Target architecture'
-        required: true
-        default: 'x86_64'
-        type: choice
-        options:
-          - x86_64
-          - aarch64
 
 jobs:
   build:
@@ -20,27 +11,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Build Docker image
         run: |
-          if [ "${{ github.event.inputs.arch }}" = "x86_64" ]; then
-            PLATFORM="linux/amd64"
-          else
-            PLATFORM="linux/arm64"
+          echo "Building Ruby 3.0.7 RPM for x86_64..."
+
+          docker build -t ruby-builder .
+
+      - name: Verify Docker Build Success
+        run: |
+          if ! docker inspect ruby-builder > /dev/null 2>&1; then
+            echo "❌ Docker build failed"
+            exit 1
           fi
-
-          echo "Building for platform: $PLATFORM"
-
-          docker buildx build \
-            --platform $PLATFORM \
-            --load \
-            -t ruby-builder \
-            .
+          echo "✅ Docker build successful"
 
       - name: Extract RPMs
         run: |
@@ -63,17 +46,19 @@ jobs:
             ls -la /home/builder/output/ 2>/dev/null || echo 'No output directory found'
             echo ''
 
-            # Copy all RPMs from output directory
+            # Copy only x86_64 and noarch RPMs from output directory
             if [ -d '/home/builder/output' ] && [ \$(find /home/builder/output -name '*.rpm' | wc -l) -gt 0 ]; then
-              echo 'Copying RPMs from output directory...'
-              cp /home/builder/output/*.rpm /output/ 2>/dev/null || true
-              echo 'Copied RPMs from output directory'
+              echo 'Copying x86_64 and noarch RPMs from output directory...'
+              find /home/builder/output -name '*x86_64.rpm' -exec cp {} /output/ \; 2>/dev/null || true
+              find /home/builder/output -name '*noarch.rpm' -exec cp {} /output/ \; 2>/dev/null || true
+              echo 'Copied x86_64 and noarch RPMs from output directory'
             fi
 
-            # Also copy from traditional RPM build locations as backup
+            # Also copy from traditional RPM build locations as backup (x86_64 and noarch only)
             if [ -d '/home/builder/rpmbuild/RPMS' ]; then
-              echo 'Copying from rpmbuild RPMS...'
-              find /home/builder/rpmbuild/RPMS -name '*.rpm' -exec cp {} /output/ \; 2>/dev/null || true
+              echo 'Copying x86_64 and noarch RPMs from rpmbuild RPMS...'
+              find /home/builder/rpmbuild/RPMS -name '*x86_64.rpm' -exec cp {} /output/ \; 2>/dev/null || true
+              find /home/builder/rpmbuild/RPMS -name '*noarch.rpm' -exec cp {} /output/ \; 2>/dev/null || true
             fi
 
             if [ -d '/home/builder/rpmbuild/SRPMS' ]; then
@@ -119,10 +104,70 @@ jobs:
             echo "No RPM files found in output directory"
           fi
 
-      - name: Upload artifacts
+      - name: Extract Complete ruby3-0-7 Structure
+        run: |
+          mkdir -p ruby3-0-7-complete
+
+          # Get current user ID to fix permissions
+          USER_ID=$(id -u)
+          GROUP_ID=$(id -g)
+
+          # Extract the complete ruby3-0-7 directory structure from container
+          docker run --rm \
+            --user root \
+            -v $(pwd)/ruby3-0-7-complete:/ruby3-0-7-complete \
+            ruby-builder bash -c "
+
+            echo 'Extracting complete ruby3-0-7 structure...'
+
+            # Copy the complete ruby3-0-7 directory structure
+            if [ -d '/home/builder/ruby3-0-7' ]; then
+              cp -r /home/builder/ruby3-0-7 /ruby3-0-7-complete/
+              echo 'Copied complete ruby3-0-7 structure'
+            fi
+
+            # Fix ownership of copied files
+            chown -R $USER_ID:$GROUP_ID /ruby3-0-7-complete/ 2>/dev/null || true
+
+            echo 'Complete ruby3-0-7 structure:'
+            find /ruby3-0-7-complete -type f | sort
+            "
+
+      - name: Verify Complete Repository Structure
+        run: |
+          echo "Complete ruby3-0-7 structure:"
+          find ruby3-0-7-complete -type f | sort
+
+          echo ""
+          echo "Repository metadata verification:"
+          if [ -f "ruby3-0-7-complete/ruby3-0-7/rpm-repo/x86_64/repodata/repomd.xml" ]; then
+            echo "✅ Repository metadata found"
+            ls -la ruby3-0-7-complete/ruby3-0-7/rpm-repo/x86_64/repodata/
+          else
+            echo "❌ Repository metadata missing"
+          fi
+
+          echo ""
+          echo "Client setup files verification:"
+          if [ -f "ruby3-0-7-complete/ruby3-0-7/client-setup/ruby-build.repo" ]; then
+            echo "✅ Repository config found"
+            cat ruby3-0-7-complete/ruby3-0-7/client-setup/ruby-build.repo
+          fi
+
+          if [ -f "ruby3-0-7-complete/ruby3-0-7/client-setup/install.sh" ]; then
+            echo "✅ Install script found"
+            ls -la ruby3-0-7-complete/ruby3-0-7/client-setup/install.sh
+          fi
+
+          echo ""
+          echo "RPM packages in repository:"
+          find ruby3-0-7-complete -name "*.rpm" | wc -l
+          find ruby3-0-7-complete -name "*.rpm"
+
+      - name: Upload Complete ruby3-0-7 Repository
         uses: actions/upload-artifact@v4
         with:
-          name: ruby-3.0.7-${{ github.event.inputs.arch }}-rpms
-          path: output/
-          retention-days: 7
+          name: ruby3-0-7-complete-x86_64
+          path: ruby3-0-7-complete/ruby3-0-7/
+          retention-days: 10
         if: always()

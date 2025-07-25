@@ -152,4 +152,51 @@ RUN echo "=== Testing RPM installation ===" && \
     ruby --version && \
     echo "=== All tests passed! ==="
 
+# Create complete ruby3-0-7 repository structure
+USER builder
+RUN echo "=== Creating ruby3-0-7 repository structure ===" && \
+    mkdir -p /home/builder/ruby3-0-7/rpm-repo/x86_64 && \
+    mkdir -p /home/builder/ruby3-0-7/client-setup && \
+    echo "=== Copying x86_64 and noarch RPM packages ===" && \
+    find /home/builder/output -name '*x86_64.rpm' -exec cp {} /home/builder/ruby3-0-7/rpm-repo/x86_64/ \; 2>/dev/null || true && \
+    find /home/builder/output -name '*noarch.rpm' -exec cp {} /home/builder/ruby3-0-7/rpm-repo/x86_64/ \; 2>/dev/null || true && \
+    echo "=== Installing createrepo_c ===" && \
+    sudo dnf install -y createrepo_c && \
+    echo "=== Generating repository metadata ===" && \
+    createrepo_c /home/builder/ruby3-0-7/rpm-repo/x86_64/ && \
+    echo "=== Creating client setup files ===" && \
+    echo '[ruby-build-3-0-7]' > /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'name=Ruby 3.0.7 Build Repository' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'baseurl=https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/ruby3-0-7/rpm-repo/x86_64/' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'enabled=1' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'gpgcheck=0' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'metadata_expire=300' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo 'priority=70' >> /home/builder/ruby3-0-7/client-setup/ruby-build.repo && \
+    echo "=== Creating installation script ===" && \
+    echo '#!/bin/bash' > /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'set -e' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'REPO_URL="https://raw.githubusercontent.com/USERNAME/REPOSITORY/main"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'echo "Installing Ruby 3.0.7 repository..."' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '# Download repo config with priority=70' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'curl -fsSL "$REPO_URL/ruby3-0-7/client-setup/ruby-build.repo" \\' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '    -o "/etc/yum.repos.d/ruby-build-3-0-7.repo"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '# Refresh cache' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'dnf clean all' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'dnf makecache' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo '' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'echo "✅ Ruby 3.0.7 repository installed with priority 70!"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'echo "📦 Install Ruby: dnf install ruby compat-openssl11"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo 'echo "🔍 Verify source: dnf info ruby"' >> /home/builder/ruby3-0-7/client-setup/install.sh && \
+    chmod +x /home/builder/ruby3-0-7/client-setup/install.sh && \
+    echo "=== Complete ruby3-0-7 structure ===" && \
+    find /home/builder/ruby3-0-7 -type f | sort && \
+    echo "=== Repository metadata verification ===" && \
+    ls -la /home/builder/ruby3-0-7/rpm-repo/x86_64/repodata/ && \
+    echo "=== Client setup files ===" && \
+    ls -la /home/builder/ruby3-0-7/client-setup/
+
 CMD ["/bin/bash"]
