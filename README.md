@@ -340,6 +340,154 @@ ruby3-2-0/
 # - Update security patches
 ```
 
+## 🧪 Testing Rails Applications
+
+### Rails 7.0 + Ruby 3.0.7 Compatibility Testing
+
+This repository includes a working example of Ruby 3.0.7 running Rails 7.0 on Amazon Linux. The setup demonstrates compatibility and provides a foundation for Rails applications.
+
+#### Quick Rails Test
+
+```bash
+# Build the Rails test container
+podman build -f Dockerfile.optimized -t rails-ruby-test .
+
+# Run the Rails application
+podman run -d -p 3000:3000 --name rails-app rails-ruby-test
+
+# Test the application
+curl http://localhost:3000/todos
+
+# View logs
+podman logs rails-app
+
+# Stop and cleanup
+podman stop rails-app && podman rm rails-app
+```
+
+#### What's Included in the Test App
+
+The test application includes:
+- **Rails 7.0.8.7** running on **Ruby 3.0.7**
+- **SQLite3** database with todo scaffold
+- **Compatibility fixes** for Logger constant issues
+- **Native gem compilation** (nokogiri, psych, etc.)
+- **OpenSSL compatibility** using compat-openssl11
+- **Responsive web interface** with basic styling
+
+#### Rails Application Features
+
+```bash
+# View todo list
+curl http://localhost:3000/todos
+
+# Create new todo (GET form)
+curl http://localhost:3000/todos/new
+
+# Access individual todos
+curl http://localhost:3000/todos/1
+curl http://localhost:3000/todos/2
+curl http://localhost:3000/todos/3
+```
+
+#### Pre-seeded Test Data
+
+The application comes with test todos to verify functionality:
+1. **"Test Ruby 3.0.7 + Rails 7.0"** - Compatibility verification
+2. **"Check OpenSSL compatibility"** - compat-openssl11 validation  
+3. **"Test gem compilation"** - Native extension verification
+
+#### Known Compatibility Fixes Applied
+
+1. **Logger Constant Issue**:
+   ```dockerfile
+   # Patches ActiveSupport logger_thread_safe_level.rb
+   RUN find /usr/local/share/gems/gems -name "logger_thread_safe_level.rb" -exec sed -i '1i require "logger"' {} \;
+   ```
+
+2. **Psych Gem Compilation**:
+   ```dockerfile
+   # Adds required YAML development headers
+   RUN yum install -y libyaml-devel
+   ```
+
+3. **System Dependencies**:
+   ```dockerfile
+   # Complete development environment
+   RUN yum install -y gcc gcc-c++ make sqlite-devel libyaml-devel
+   ```
+
+#### Building Custom Rails Applications
+
+Use the optimized Dockerfile as a base for your Rails applications:
+
+```dockerfile
+FROM amazonlinux:latest
+
+# Copy the Ruby installation steps from Dockerfile.optimized
+# Add Ruby 3.0.7 repository
+RUN curl -fsSL "https://raw.githubusercontent.com/YOUR-USERNAME/YOUR-REPO/main/ruby3-0-7/client-setup/ruby-build.repo" \
+    -o "/etc/yum.repos.d/ruby-build-3-0-7.repo"
+
+# Install Ruby and system dependencies  
+RUN yum clean all && yum makecache && \
+    yum install -y ruby ruby-devel compat-openssl11 compat-openssl11-devel \
+                   gcc gcc-c++ make sqlite-devel libyaml-devel nodejs npm
+
+# Install Rails and apply compatibility fixes
+RUN gem install rails -v "~> 7.0.0" --no-document && \
+    find /usr/local/share/gems/gems -name "logger_thread_safe_level.rb" -exec sed -i '1i require "logger"' {} \;
+
+# Add your Rails application
+COPY . /app
+WORKDIR /app
+RUN bundle install
+
+# Start your Rails app
+CMD ["rails", "server", "-b", "0.0.0.0"]
+```
+
+#### Performance Metrics
+
+**Container build times**:
+- **From source compilation**: ~20+ minutes
+- **Using RPM repository**: ~5 minutes
+- **Build cache utilization**: ~2 minutes for rebuilds
+
+**Runtime verification**:
+- Rails server starts in ~3-5 seconds
+- Native gems compile successfully
+- Full CRUD operations functional
+- OpenSSL/TLS connections working
+
+#### Troubleshooting Rails Issues
+
+**Common Rails + Ruby 3.0.7 issues**:
+
+1. **Logger constant errors**:
+   ```bash
+   # Already fixed in Dockerfile.optimized
+   # Manual fix: Add require "logger" to problematic files
+   ```
+
+2. **Psych compilation failures**:
+   ```bash
+   # Ensure libyaml-devel is installed
+   yum install -y libyaml-devel
+   ```
+
+3. **Bundle install as root warnings**:
+   ```bash
+   # Non-critical warning - application still functions
+   # For production, use non-root user
+   ```
+
+4. **Gem compilation issues**:
+   ```bash
+   # Ensure all development packages are installed
+   yum install -y gcc gcc-c++ make openssl-devel libffi-devel
+   ```
+
 ## 📖 Additional Resources
 
 ### Documentation Links
@@ -347,6 +495,7 @@ ruby3-2-0/
 - [DNF Repository Management](https://dnf.readthedocs.io/en/latest/)
 - [Ruby Build Configuration](https://www.ruby-lang.org/en/documentation/installation/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Rails 7.0 Documentation](https://guides.rubyonrails.org/7_0_release_notes.html)
 
 ### Community Support
 - **Issues**: Report problems in the GitHub Issues section

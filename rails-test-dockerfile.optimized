@@ -1,0 +1,76 @@
+FROM amazonlinux:latest
+
+# Install system dependencies
+RUN yum update -y && \
+    yum install -y --allowerasing \
+    git \
+    gcc \
+    gcc-c++ \
+    make \
+    sqlite-devel \
+    libyaml-devel \
+    nodejs \
+    npm \
+    curl \
+    which
+
+# Add Ruby 3.0.7 repository
+RUN curl -fsSL "https://raw.githubusercontent.com/mobilecause/ruby-build/main/ruby3-0-7/client-setup/ruby-build.repo" \
+    -o "/etc/yum.repos.d/ruby-build-3-0-7.repo"
+
+# Install Ruby 3.0.7 and dependencies from repository
+RUN yum clean all && \
+    yum makecache && \
+    yum install -y \
+    ruby \
+    ruby-devel \
+    compat-openssl11 \
+    compat-openssl11-devel
+
+# Verify Ruby installation
+RUN ruby --version && gem --version
+
+# Install Rails 7.0
+RUN gem install rails -v "~> 7.0.0" --no-document
+
+# Fix Logger constant issue by patching ActiveSupport
+RUN find /usr/local/share/gems/gems -name "logger_thread_safe_level.rb" -exec sed -i '1i require "logger"' {} \;
+
+# Create app directory
+WORKDIR /app
+
+# Generate Rails todo app
+RUN rails new todo_app --database=sqlite3 --skip-git --skip-bundle
+
+WORKDIR /app/todo_app
+
+# Install gems
+RUN bundle install
+
+# Create todo scaffold
+RUN rails generate scaffold Todo title:string completed:boolean description:text
+
+# Set up database
+RUN rails db:migrate
+
+# Create seed data
+RUN echo "Todo.create!(title: 'Test Ruby 3.0.7 + Rails 7.0', completed: false, description: 'Verify compatibility between Ruby 3.0.7 and Rails 7.0')" > db/seeds.rb && \
+    echo "Todo.create!(title: 'Check OpenSSL compatibility', completed: false, description: 'Ensure compat-openssl11 works with Rails')" >> db/seeds.rb && \
+    echo "Todo.create!(title: 'Test gem compilation', completed: false, description: 'Verify native gems compile correctly')" >> db/seeds.rb && \
+    rails db:seed
+
+# Add basic styling
+RUN echo "body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }" > app/assets/stylesheets/application.css && \
+    echo ".todo-item { padding: 15px; border: 1px solid #ddd; margin: 10px 0; background: white; border-radius: 5px; }" >> app/assets/stylesheets/application.css && \
+    echo ".completed { text-decoration: line-through; color: #888; background: #f9f9f9; }" >> app/assets/stylesheets/application.css && \
+    echo "h1 { color: #333; }" >> app/assets/stylesheets/application.css
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3000/todos || exit 1
+
+# Start Rails server with verbose logging for debugging
+CMD ["sh", "-c", "echo 'Ruby version:' && ruby --version && echo 'Rails version:' && rails --version && echo 'Starting Rails server...' && rails server -b 0.0.0.0 -p 3000"]
