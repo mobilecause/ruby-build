@@ -1,0 +1,73 @@
+From 5e2f8761b2342ee58f9689a7d62d48ec031e59c0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?V=C3=ADt=20Ondruch?= <vondruch@redhat.com>
+Date: Mon, 2 Jan 2023 14:30:13 +0100
+Subject: [PATCH] Revert "Fix test-syntax-suggest order"
+
+This reverts commit 18c1ca8f4c0748905d5cedb6c044df507ea8ad6a.
+---
+ common.mk     | 12 ++++--------
+ defs/gmake.mk |  2 +-
+ 2 files changed, 5 insertions(+), 9 deletions(-)
+
+diff --git a/common.mk b/common.mk
+index d0558697d7..e73841aae7 100644
+--- a/common.mk
++++ b/common.mk
+@@ -767,7 +767,8 @@ clean-spec: PHONY
+ 	-$(Q) $(RMDIRS) $(RUBYSPEC_CAPIEXT) 2> $(NULL) || $(NULLCMD)
+ 	-$(Q) $(RMALL) rubyspec_temp
+ 
+-check: main $(DOT_WAIT) test $(DOT_WAIT) test-tool $(DOT_WAIT) test-all
++check: main $(DOT_WAIT) test $(DOT_WAIT) test-tool $(DOT_WAIT) test-all \
++       $(DOT_WAIT) test-spec $(DOT_WAIT) test-syntax-suggest
+ 	$(ECHO) check succeeded
+ 	-$(Q) : : "run only on sh"; \
+ 	if [ x"$(GIT)" != x ] && $(CHDIR) "$(srcdir)" && \
+@@ -904,8 +905,6 @@ yes-test-spec: test-spec-precheck
+ 	$(ACTIONS_ENDGROUP)
+ no-test-spec:
+ 
+-check: $(DOT_WAIT) test-spec
+-
+ RUNNABLE = $(LIBRUBY_RELATIVE:no=un)-runnable
+ runnable: $(RUNNABLE) prog $(tooldir)/mkrunnable.rb PHONY
+ 	$(Q) $(MINIRUBY) $(tooldir)/mkrunnable.rb -v $(EXTOUT)
+@@ -1457,7 +1456,6 @@ test-syntax-suggest-precheck: $(TEST_RUNNABLE)-test-syntax-suggest-precheck
+ no-test-syntax-suggest-precheck:
+ yes-test-syntax-suggest-precheck: main
+ 
+-test-syntax-suggest-prepare: $(TEST_RUNNABLE)-test-syntax-suggest-prepare
+ no-test-syntax-suggest-prepare: no-test-syntax-suggest-precheck
+ yes-test-syntax-suggest-prepare: yes-test-syntax-suggest-precheck
+ 	$(ACTIONS_GROUP)
+@@ -1467,15 +1465,13 @@ yes-test-syntax-suggest-prepare: yes-test-syntax-suggest-precheck
+ 
+ RSPECOPTS =
+ SYNTAX_SUGGEST_SPECS =
+-PREPARE_SYNTAX_SUGGEST = test-syntax-suggest-prepare
++PREPARE_SYNTAX_SUGGEST = yes-test-syntax-suggest-prepare
+ test-syntax-suggest: $(TEST_RUNNABLE)-test-syntax-suggest
+-yes-test-syntax-suggest: yes-$(PREPARE_SYNTAX_SUGGEST)
++yes-test-syntax-suggest: $(PREPARE_SYNTAX_SUGGEST)
+ 	$(XRUBY) -C $(srcdir) -Ispec/syntax_suggest .bundle/bin/rspec \
+ 		--require spec_helper $(RSPECOPTS) spec/syntax_suggest/$(SYNTAX_SUGGEST_SPECS)
+ no-test-syntax-suggest:
+ 
+-check: $(DOT_WAIT) $(TEST_RUNNABLE)-$(PREPARE_SYNTAX_SUGGEST) test-syntax-suggest
+-
+ test-bundler-precheck: $(TEST_RUNNABLE)-test-bundler-precheck
+ no-test-bundler-precheck:
+ yes-test-bundler-precheck: main $(arch)-fake.rb
+diff --git a/defs/gmake.mk b/defs/gmake.mk
+index 54fef6685f..0aa403a4eb 100644
+--- a/defs/gmake.mk
++++ b/defs/gmake.mk
+@@ -84,7 +84,7 @@ endif
+ ORDERED_TEST_TARGETS := $(filter $(TEST_TARGETS), \
+ 	btest-ruby test-knownbug test-basic \
+ 	test-testframework test-tool test-ruby test-all \
+-	test-spec test-syntax-suggest-prepare test-syntax-suggest \
++	test-spec test-syntax-suggest \
+ 	test-bundler-prepare test-bundler test-bundler-parallel \
+ 	test-bundled-gems-precheck test-bundled-gems-fetch \
+ 	test-bundled-gems-prepare test-bundled-gems-run \

@@ -1,0 +1,67 @@
+From cf60e383a9c98da5cd75012f2aabfa4a2774aade Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?V=C3=ADt=20Ondruch?= <vondruch@redhat.com>
+Date: Mon, 2 Jan 2023 14:16:39 +0100
+Subject: [PATCH] Revert "Test syntax_suggest by `make check`"
+
+This reverts commit cae53842735237ccf71a13873fd0d1ae7f165582.
+---
+ common.mk     | 6 ++----
+ defs/gmake.mk | 6 ++----
+ 2 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/common.mk b/common.mk
+index 27f6a9d89d..8021f03a58 100644
+--- a/common.mk
++++ b/common.mk
+@@ -767,8 +767,7 @@ clean-spec: PHONY
+ 	-$(Q) $(RMDIRS) $(RUBYSPEC_CAPIEXT) 2> $(NULL) || $(NULLCMD)
+ 	-$(Q) $(RMALL) rubyspec_temp
+ 
+-check: main $(DOT_WAIT) test $(DOT_WAIT) test-tool $(DOT_WAIT) test-all \
+-       $(DOT_WAIT) test-spec $(DOT_WAIT) test-syntax-suggest
++check: main $(DOT_WAIT) test $(DOT_WAIT) test-tool $(DOT_WAIT) test-all $(DOT_WAIT) test-spec
+ 	$(ECHO) check succeeded
+ 	-$(Q) : : "run only on sh"; \
+ 	if [ x"$(GIT)" != x ] && $(CHDIR) "$(srcdir)" && \
+@@ -1465,9 +1464,8 @@ yes-test-syntax-suggest-prepare: yes-test-syntax-suggest-precheck
+ 
+ RSPECOPTS =
+ SYNTAX_SUGGEST_SPECS =
+-PREPARE_SYNTAX_SUGGEST = yes-test-syntax-suggest-prepare
+ test-syntax-suggest: $(TEST_RUNNABLE)-test-syntax-suggest
+-yes-test-syntax-suggest: $(PREPARE_SYNTAX_SUGGEST)
++yes-test-syntax-suggest: yes-test-syntax-suggest-prepare
+ 	$(XRUBY) -C $(srcdir) -Ispec/syntax_suggest .bundle/bin/rspec \
+ 		--require spec_helper $(RSPECOPTS) spec/syntax_suggest/$(SYNTAX_SUGGEST_SPECS)
+ no-test-syntax-suggest:
+diff --git a/defs/gmake.mk b/defs/gmake.mk
+index 0aa403a4eb..dc9d31f49e 100644
+--- a/defs/gmake.mk
++++ b/defs/gmake.mk
+@@ -27,7 +27,7 @@ TEST_DEPENDS := $(filter-out commit $(TEST_TARGETS),$(MAKECMDGOALS))
+ TEST_TARGETS := $(patsubst great,exam,$(TEST_TARGETS))
+ TEST_DEPENDS := $(filter-out great $(TEST_TARGETS),$(TEST_DEPENDS))
+ TEST_TARGETS := $(patsubst exam,check,$(TEST_TARGETS))
+-TEST_TARGETS := $(patsubst check,test-syntax-suggest test-spec test-all test-tool test-short,$(TEST_TARGETS))
++TEST_TARGETS := $(patsubst check,test-spec test-all test-tool test-short,$(TEST_TARGETS))
+ TEST_TARGETS := $(patsubst test-rubyspec,test-spec,$(TEST_TARGETS))
+ TEST_DEPENDS := $(filter-out exam check test-spec $(TEST_TARGETS),$(TEST_DEPENDS))
+ TEST_TARGETS := $(patsubst love,check,$(TEST_TARGETS))
+@@ -40,7 +40,6 @@ TEST_TARGETS := $(patsubst test-short,btest-ruby test-knownbug test-basic,$(TEST
+ TEST_TARGETS := $(patsubst test-bundled-gems,test-bundled-gems-run,$(TEST_TARGETS))
+ TEST_TARGETS := $(patsubst test-bundled-gems-run,test-bundled-gems-run $(PREPARE_BUNDLED_GEMS),$(TEST_TARGETS))
+ TEST_TARGETS := $(patsubst test-bundled-gems-prepare,test-bundled-gems-prepare $(PRECHECK_BUNDLED_GEMS) test-bundled-gems-fetch,$(TEST_TARGETS))
+-TEST_TARGETS := $(patsubst test-syntax-suggest,test-syntax-suggest $(PREPARE_SYNTAX_SUGGEST),$(TEST_TARGETS))
+ TEST_DEPENDS := $(filter-out test-short $(TEST_TARGETS),$(TEST_DEPENDS))
+ TEST_DEPENDS += $(if $(filter great exam love check,$(MAKECMDGOALS)),all exts)
+ endif
+@@ -84,8 +83,7 @@ endif
+ ORDERED_TEST_TARGETS := $(filter $(TEST_TARGETS), \
+ 	btest-ruby test-knownbug test-basic \
+ 	test-testframework test-tool test-ruby test-all \
+-	test-spec test-syntax-suggest \
+-	test-bundler-prepare test-bundler test-bundler-parallel \
++	test-spec test-bundler-prepare test-bundler test-bundler-parallel \
+ 	test-bundled-gems-precheck test-bundled-gems-fetch \
+ 	test-bundled-gems-prepare test-bundled-gems-run \
+ 	)
