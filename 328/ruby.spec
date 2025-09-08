@@ -665,6 +665,7 @@ pushd %{_vpath_builddir}
         --with-sitearchhdrdir='$(sitehdrdir)/$(arch)' \
         --with-vendorarchhdrdir='$(vendorhdrdir)/$(arch)' \
         --with-rubygemsdir='%{rubygems_dir}' \
+        --with-ruby-pc='%{name}.pc' \
         --with-compress-debug-sections=no \
         --disable-rpath \
         --enable-mkmf-verbose \
@@ -699,7 +700,7 @@ ln -s libruby.so.%{ruby_version} %{buildroot}%{_libdir}/libruby.so
 
 # Version is now properly set via --with-ruby-version configure option
 # No need to sed the pkgconfig file
-# sed -i 's/Version: \${ruby_version}/Version: %{ruby_version}/' %{buildroot}%{_libdir}/pkgconfig/%{name}.pc
+sed -i 's/Version: \${ruby_version}/Version: %{ruby_version}/' %{buildroot}%{_libdir}/pkgconfig/%{name}.pc
 
 # Kill bundled certificates, as they should be part of ca-certificates.
 for cert in \
