@@ -29,7 +29,8 @@ RUN dnf update -y && \
         procps-ng \
         'dnf-command(builddep)' \
         dnf-plugins-core \
-        openssl-devel
+        openssl-devel \
+        openssl
 
 # Create build user and setup RPM build environment
 RUN useradd -m builder && \
