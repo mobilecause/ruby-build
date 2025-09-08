@@ -696,9 +696,9 @@ rm -rf %{buildroot}
 # Rename the ruby executable. It is replaced by RubyPick.
 %{?with_rubypick:mv %{buildroot}%{_bindir}/%{name}{,-mri}}
 
-# Version is empty if --with-ruby-version is specified.
-# http://bugs.ruby-lang.org/issues/7807
-sed -i 's/Version: \${ruby_version}/Version: %{ruby_version}/' %{buildroot}%{_libdir}/pkgconfig/%{name}.pc
+# Version is now properly set via --with-ruby-version configure option
+# No need to sed the pkgconfig file
+# sed -i 's/Version: \${ruby_version}/Version: %{ruby_version}/' %{buildroot}%{_libdir}/pkgconfig/%{name}.pc
 
 # Kill bundled certificates, as they should be part of ca-certificates.
 for cert in \
