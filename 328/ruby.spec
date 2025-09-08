@@ -1,6 +1,6 @@
 %global major_version 3
 %global minor_version 2
-%global teeny_version 5
+%global teeny_version 8
 %global major_minor_version %{major_version}.%{minor_version}
 
 %global ruby_version %{major_minor_version}.%{teeny_version}
@@ -2112,7 +2112,7 @@ mv test/ruby/test_jit.rb{,.disable} || :
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
 
 * Tue Jun 24 2014 Peter Robinson <pbrobinson@fedoraproject.org> 2.1.2-23
-- Fix FTBFS 
+- Fix FTBFS
 - Specify tcl/tk 8.6
 - Add upstream patch to build with libffi 3.1
 
@@ -2253,7 +2253,7 @@ mv test/ruby/test_jit.rb{,.disable} || :
 * Fri Jan 18 2013 Mamoru TASAKA <mtasaka@fedoraproject.org> - 1.9.3.362-26
 - Provide non-versioned pkgconfig file (bug 789532)
 - Use db5 on F-19 (bug 894022)
- 
+
 * Wed Jan 16 2013 Mamoru TASAKA <mtasaka@fedoraproject.org> - 1.9.3.362-25
 - Backport fix for the upstream PR7629, save the proc made from the given block
   (bug 895173)
