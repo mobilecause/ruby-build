@@ -130,8 +130,8 @@ Source14: test_systemtap.rb
 
 # The load directive is supported since RPM 4.12, i.e. F21+. The build process
 # fails on older Fedoras.
-%{load:%{SOURCE4}}
-%{load:%{SOURCE5}}
+#%{load:%{SOURCE4}}
+#%{load:%{SOURCE5}}
 
 # Fix ruby_version abuse.
 # https://bugs.ruby-lang.org/issues/11002
