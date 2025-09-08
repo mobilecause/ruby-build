@@ -135,7 +135,7 @@ Source14: test_systemtap.rb
 
 # Fix ruby_version abuse.
 # https://bugs.ruby-lang.org/issues/11002
-Patch0: ruby-2.3.0-ruby_version.patch
+#Patch0: ruby-2.3.0-ruby_version.patch
 # http://bugs.ruby-lang.org/issues/7807
 Patch1: ruby-2.1.0-Prevent-duplicated-paths-when-empty-version-string-i.patch
 # Allows to override libruby.so placement. Hopefully we will be able to return
