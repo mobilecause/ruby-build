@@ -127,7 +127,7 @@ RUN echo "=== Generating repository metadata ===" && \
     echo '#!/bin/bash' > /home/builder/ruby3-2-8/client-setup/install.sh && \
     echo 'set -e' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
     echo '' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
-    echo 'REPO_URL="https://raw.githubusercontent.com/USERNAME/REPOSITORY/main"' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
+    echo 'REPO_URL="https://raw.githubusercontent.com/mobilecause/ruby-build/main"' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
     echo '' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
     echo 'echo "Installing Ruby 3.2.8 repository..."' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
     echo '' >> /home/builder/ruby3-2-8/client-setup/install.sh && \
