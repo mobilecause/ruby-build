@@ -16,9 +16,9 @@
 
 # If revision and milestone are removed/commented out, the official release build is expected.
 %if 0%{?milestone:1}%{?revision:1} != 0
-%global ruby_archive %{ruby_archive}-%{?milestone}%{?!milestone:%{?revision}}
-%define ruby_archive_timestamp %(stat --printf='@%Y' %{_sourcedir}/%{ruby_archive}.tar.xz | date -f - +"%Y%m%d")
-%define development_release ~%{ruby_archive_timestamp}%{?milestone}%{?!milestone:%{?revision:git%{revision}}}
+#%global ruby_archive %{ruby_archive}-%{?milestone}%{?!milestone:%{?revision}}
+#%define ruby_archive_timestamp %(stat --printf='@%Y' %{_sourcedir}/%{ruby_archive}.tar.xz | date -f - +"%Y%m%d")
+#%define development_release ~%{ruby_archive_timestamp}%{?milestone}%{?!milestone:%{?revision:git%{revision}}}
 %endif
 
 
@@ -135,13 +135,13 @@ Source14: test_systemtap.rb
 
 # Fix ruby_version abuse.
 # https://bugs.ruby-lang.org/issues/11002
-Patch0: ruby-2.3.0-ruby_version.patch
+#Patch0: ruby-2.3.0-ruby_version.patch
 # http://bugs.ruby-lang.org/issues/7807
-Patch1: ruby-2.1.0-Prevent-duplicated-paths-when-empty-version-string-i.patch
+#Patch1: ruby-2.1.0-Prevent-duplicated-paths-when-empty-version-string-i.patch
 # Allows to override libruby.so placement. Hopefully we will be able to return
 # to plain --with-rubyarchprefix.
 # http://bugs.ruby-lang.org/issues/8973
-Patch2: ruby-2.1.0-Enable-configuration-of-archlibdir.patch
+#Patch2: ruby-2.1.0-Enable-configuration-of-archlibdir.patch
 # Force multiarch directories for i.86 to be always named i386. This solves
 # some differencies in build between Fedora and RHEL.
 #Patch3: ruby-2.1.0-always-use-i386.patch
