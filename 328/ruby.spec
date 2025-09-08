@@ -775,48 +775,98 @@ fi
 
 mkdir -p %{buildroot}%{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib
 mkdir -p %{buildroot}%{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}/bigdecimal
-mv %{buildroot}%{ruby_libdir}/bigdecimal %{buildroot}%{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib
-mv %{buildroot}%{ruby_libarchdir}/bigdecimal.so %{buildroot}%{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}
+if [ -d "%{buildroot}%{ruby_libdir}/bigdecimal" ]; then
+  mv %{buildroot}%{ruby_libdir}/bigdecimal %{buildroot}%{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib
+fi
+if [ -f "%{buildroot}%{ruby_libarchdir}/bigdecimal.so" ]; then
+  mv %{buildroot}%{ruby_libarchdir}/bigdecimal.so %{buildroot}%{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}
+fi
 touch %{buildroot}%{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}/gem.build_complete
-mv %{buildroot}%{gem_dir}/specifications/default/bigdecimal-%{bigdecimal_version}.gemspec %{buildroot}%{gem_dir}/specifications
-ln -s %{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib/bigdecimal %{buildroot}%{ruby_libdir}/bigdecimal
-ln -s %{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}/bigdecimal.so %{buildroot}%{ruby_libarchdir}/bigdecimal.so
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/bigdecimal-%{bigdecimal_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/bigdecimal-%{bigdecimal_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
+if [ -d "%{buildroot}%{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib/bigdecimal" ]; then
+  ln -s %{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib/bigdecimal %{buildroot}%{ruby_libdir}/bigdecimal
+fi
+if [ -f "%{buildroot}%{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}/bigdecimal.so" ]; then
+  ln -s %{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}/bigdecimal.so %{buildroot}%{ruby_libarchdir}/bigdecimal.so
+fi
 
 # TODO: Put help files into proper location.
 # https://bugs.ruby-lang.org/issues/15359
 mkdir -p %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib
-mv %{buildroot}%{ruby_libdir}/bundler.rb %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib
-mv %{buildroot}%{ruby_libdir}/bundler %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib
-mv %{buildroot}%{gem_dir}/specifications/default/bundler-%{bundler_version}.gemspec %{buildroot}%{gem_dir}/specifications
+if [ -f "%{buildroot}%{ruby_libdir}/bundler.rb" ]; then
+  mv %{buildroot}%{ruby_libdir}/bundler.rb %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib
+fi
+if [ -d "%{buildroot}%{ruby_libdir}/bundler" ]; then
+  mv %{buildroot}%{ruby_libdir}/bundler %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib
+fi
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/bundler-%{bundler_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/bundler-%{bundler_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
 
 mkdir -p %{buildroot}%{gem_dir}/gems/io-console-%{io_console_version}/lib
 mkdir -p %{buildroot}%{_libdir}/gems/%{name}/io-console-%{io_console_version}/io
-mv %{buildroot}%{ruby_libdir}/io %{buildroot}%{gem_dir}/gems/io-console-%{io_console_version}/lib
-mv %{buildroot}%{ruby_libarchdir}/io/console.so %{buildroot}%{_libdir}/gems/%{name}/io-console-%{io_console_version}/io
+if [ -d "%{buildroot}%{ruby_libdir}/io" ]; then
+  mv %{buildroot}%{ruby_libdir}/io %{buildroot}%{gem_dir}/gems/io-console-%{io_console_version}/lib
+fi
+if [ -f "%{buildroot}%{ruby_libarchdir}/io/console.so" ]; then
+  mv %{buildroot}%{ruby_libarchdir}/io/console.so %{buildroot}%{_libdir}/gems/%{name}/io-console-%{io_console_version}/io
+fi
 touch %{buildroot}%{_libdir}/gems/%{name}/io-console-%{io_console_version}/gem.build_complete
-mv %{buildroot}%{gem_dir}/specifications/default/io-console-%{io_console_version}.gemspec %{buildroot}%{gem_dir}/specifications
-ln -s %{gem_dir}/gems/io-console-%{io_console_version}/lib/io %{buildroot}%{ruby_libdir}/io
-ln -s %{_libdir}/gems/%{name}/io-console-%{io_console_version}/io/console.so %{buildroot}%{ruby_libarchdir}/io/console.so
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/io-console-%{io_console_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/io-console-%{io_console_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
+if [ -d "%{buildroot}%{gem_dir}/gems/io-console-%{io_console_version}/lib/io" ]; then
+  ln -s %{gem_dir}/gems/io-console-%{io_console_version}/lib/io %{buildroot}%{ruby_libdir}/io
+fi
+if [ -f "%{buildroot}%{_libdir}/gems/%{name}/io-console-%{io_console_version}/io/console.so" ]; then
+  ln -s %{_libdir}/gems/%{name}/io-console-%{io_console_version}/io/console.so %{buildroot}%{ruby_libarchdir}/io/console.so
+fi
 
 mkdir -p %{buildroot}%{gem_dir}/gems/json-%{json_version}/lib
 mkdir -p %{buildroot}%{_libdir}/gems/%{name}/json-%{json_version}
-mv %{buildroot}%{ruby_libdir}/json* %{buildroot}%{gem_dir}/gems/json-%{json_version}/lib
-mv %{buildroot}%{ruby_libarchdir}/json/ %{buildroot}%{_libdir}/gems/%{name}/json-%{json_version}/
+if ls %{buildroot}%{ruby_libdir}/json* 1> /dev/null 2>&1; then
+  mv %{buildroot}%{ruby_libdir}/json* %{buildroot}%{gem_dir}/gems/json-%{json_version}/lib
+fi
+if [ -d "%{buildroot}%{ruby_libarchdir}/json/" ]; then
+  mv %{buildroot}%{ruby_libarchdir}/json/ %{buildroot}%{_libdir}/gems/%{name}/json-%{json_version}/
+fi
 touch %{buildroot}%{_libdir}/gems/%{name}/json-%{json_version}/gem.build_complete
-mv %{buildroot}%{gem_dir}/specifications/default/json-%{json_version}.gemspec %{buildroot}%{gem_dir}/specifications
-ln -s %{gem_dir}/gems/json-%{json_version}/lib/json.rb %{buildroot}%{ruby_libdir}/json.rb
-ln -s %{gem_dir}/gems/json-%{json_version}/lib/json %{buildroot}%{ruby_libdir}/json
-ln -s %{_libdir}/gems/%{name}/json-%{json_version}/json/ %{buildroot}%{ruby_libarchdir}/json
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/json-%{json_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/json-%{json_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
+if [ -f "%{buildroot}%{gem_dir}/gems/json-%{json_version}/lib/json.rb" ]; then
+  ln -s %{gem_dir}/gems/json-%{json_version}/lib/json.rb %{buildroot}%{ruby_libdir}/json.rb
+fi
+if [ -d "%{buildroot}%{gem_dir}/gems/json-%{json_version}/lib/json" ]; then
+  ln -s %{gem_dir}/gems/json-%{json_version}/lib/json %{buildroot}%{ruby_libdir}/json
+fi
+if [ -d "%{buildroot}%{_libdir}/gems/%{name}/json-%{json_version}/json/" ]; then
+  ln -s %{_libdir}/gems/%{name}/json-%{json_version}/json/ %{buildroot}%{ruby_libarchdir}/json
+fi
 
 mkdir -p %{buildroot}%{gem_dir}/gems/psych-%{psych_version}/lib
 mkdir -p %{buildroot}%{_libdir}/gems/%{name}/psych-%{psych_version}
-mv %{buildroot}%{ruby_libdir}/psych* %{buildroot}%{gem_dir}/gems/psych-%{psych_version}/lib
-mv %{buildroot}%{ruby_libarchdir}/psych.so %{buildroot}%{_libdir}/gems/%{name}/psych-%{psych_version}/
+if ls %{buildroot}%{ruby_libdir}/psych* 1> /dev/null 2>&1; then
+  mv %{buildroot}%{ruby_libdir}/psych* %{buildroot}%{gem_dir}/gems/psych-%{psych_version}/lib
+fi
+if [ -f "%{buildroot}%{ruby_libarchdir}/psych.so" ]; then
+  mv %{buildroot}%{ruby_libarchdir}/psych.so %{buildroot}%{_libdir}/gems/%{name}/psych-%{psych_version}/
+fi
 touch %{buildroot}%{_libdir}/gems/%{name}/psych-%{psych_version}/gem.build_complete
-mv %{buildroot}%{gem_dir}/specifications/default/psych-%{psych_version}.gemspec %{buildroot}%{gem_dir}/specifications
-ln -s %{gem_dir}/gems/psych-%{psych_version}/lib/psych %{buildroot}%{ruby_libdir}/psych
-ln -s %{gem_dir}/gems/psych-%{psych_version}/lib/psych.rb %{buildroot}%{ruby_libdir}/psych.rb
-ln -s %{_libdir}/gems/%{name}/psych-%{psych_version}/psych.so %{buildroot}%{ruby_libarchdir}/psych.so
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/psych-%{psych_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/psych-%{psych_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
+if [ -d "%{buildroot}%{gem_dir}/gems/psych-%{psych_version}/lib/psych" ]; then
+  ln -s %{gem_dir}/gems/psych-%{psych_version}/lib/psych %{buildroot}%{ruby_libdir}/psych
+fi
+if [ -f "%{buildroot}%{gem_dir}/gems/psych-%{psych_version}/lib/psych.rb" ]; then
+  ln -s %{gem_dir}/gems/psych-%{psych_version}/lib/psych.rb %{buildroot}%{ruby_libdir}/psych.rb
+fi
+if [ -f "%{buildroot}%{_libdir}/gems/%{name}/psych-%{psych_version}/psych.so" ]; then
+  ln -s %{_libdir}/gems/%{name}/psych-%{psych_version}/psych.so %{buildroot}%{ruby_libarchdir}/psych.so
+fi
 
 # Move the binary extensions into proper place (if no gem has binary extension,
 # the extensions directory might be empty).
