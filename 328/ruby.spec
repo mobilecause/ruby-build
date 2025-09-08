@@ -871,12 +871,19 @@ fi
 # Move the binary extensions into proper place (if no gem has binary extension,
 # the extensions directory might be empty).
 # TODO: Get information about extension form .gemspec files.
-find %{buildroot}%{gem_dir}/extensions/*-%{_target_os}/%{major_minor_version}.*/* -maxdepth 0 \
-  -exec mv '{}' %{buildroot}%{_libdir}/gems/%{name}/ \; \
-  || echo "No gem binary extensions to move."
+# Move gem binary extensions if they exist
+if ls %{buildroot}%{gem_dir}/extensions/*-%{_target_os}/%{major_minor_version}.* 1> /dev/null 2>&1; then
+  find %{buildroot}%{gem_dir}/extensions/*-%{_target_os}/%{major_minor_version}.*/* -maxdepth 0 \
+    -exec mv '{}' %{buildroot}%{_libdir}/gems/%{name}/ \; 2>/dev/null \
+    || echo "No gem binary extensions to move."
+else
+  echo "No gem binary extensions to move."
+fi
 
 # Remove the extension sources and library copies from `lib` dir.
-find %{buildroot}%{gem_dir}/gems/*/ext -maxdepth 0 -exec rm -rf '{}' +
+if ls %{buildroot}%{gem_dir}/gems/*/ext 1> /dev/null 2>&1; then
+  find %{buildroot}%{gem_dir}/gems/*/ext -maxdepth 0 -exec rm -rf '{}' + 2>/dev/null || true
+fi
 find %{buildroot}%{gem_dir}/gems/*/lib -name \*.so -delete
 
 # Move man pages into proper location
