@@ -26,6 +26,7 @@ RUN dnf update -y && \
         gmp-devel \
         hostname \
         systemtap \
+        elfutils \
         procps-ng \
         'dnf-command(builddep)' \
         dnf-plugins-core \
