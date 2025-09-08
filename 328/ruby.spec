@@ -888,10 +888,18 @@ find %{buildroot}%{gem_dir}/gems/*/lib -name \*.so -delete
 
 # Move man pages into proper location
 mkdir -p %{buildroot}%{_mandir}/man{1,5}
-mv %{buildroot}%{gem_dir}/gems/rake-%{rake_version}/doc/rake.1 %{buildroot}%{_mandir}/man1
+if [ -f "%{buildroot}%{gem_dir}/gems/rake-%{rake_version}/doc/rake.1" ]; then
+  mv %{buildroot}%{gem_dir}/gems/rake-%{rake_version}/doc/rake.1 %{buildroot}%{_mandir}/man1
+fi
 # https://bugs.ruby-lang.org/issues/17778
-cp -a %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man/*.1 %{buildroot}%{_mandir}/man1
-cp -a %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man/*.5 %{buildroot}%{_mandir}/man5
+if [ -d "%{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man" ]; then
+  if ls %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man/*.1 1> /dev/null 2>&1; then
+    cp -a %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man/*.1 %{buildroot}%{_mandir}/man1
+  fi
+  if ls %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man/*.5 1> /dev/null 2>&1; then
+    cp -a %{buildroot}%{gem_dir}/gems/bundler-%{bundler_version}/lib/bundler/man/*.5 %{buildroot}%{_mandir}/man5
+  fi
+fi
 
 %if %{with systemtap}
 # Install a tapset and fix up the path to the library.
