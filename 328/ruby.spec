@@ -670,7 +670,6 @@ pushd %{_vpath_builddir}
         --disable-rpath \
         --enable-mkmf-verbose \
         --enable-shared \
-        --with-ruby-version='' \
         --enable-multiarch \
         %{?with_yjit: --enable-yjit} \
 

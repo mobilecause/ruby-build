@@ -1,0 +1,49 @@
+FROM amazonlinux:latest
+
+# Set environment variables
+ENV RVM_VERSION=stable
+ENV RUBY_VERSION=3.2.8
+
+# Install dependencies
+RUN dnf update -y && dnf install -y --allowerasing \
+    curl \
+    gnupg2 \
+    gcc \
+    gcc-c++ \
+    make \
+    patch \
+    openssl-devel \
+    readline-devel \
+    zlib-devel \
+    libyaml-devel \
+    libxml2-devel \
+    libxslt-devel \
+    libffi-devel \
+    gdbm-devel \
+    ncurses-devel \
+    git \
+    wget \
+    procps-ng \
+    which \
+    tar \
+    && dnf clean all
+
+# Import RVM GPG keys and install RVM
+RUN gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB || \
+    (curl -sSL https://rvm.io/mpapis.asc | gpg2 --import - && curl -sSL https://rvm.io/pkuczynski.asc | gpg2 --import -)
+RUN curl -sSL https://get.rvm.io | bash -s stable
+RUN /bin/bash -l -c "source /etc/profile.d/rvm.sh"
+
+# Add RVM to PATH and install Ruby
+RUN /bin/bash -l -c "source /etc/profile.d/rvm.sh && rvm install ${RUBY_VERSION}"
+RUN /bin/bash -l -c "source /etc/profile.d/rvm.sh && rvm use ${RUBY_VERSION} --default"
+
+# Verify installation
+RUN /bin/bash -l -c "source /etc/profile.d/rvm.sh && ruby --version"
+RUN /bin/bash -l -c "source /etc/profile.d/rvm.sh && gem --version"
+
+# Set working directory
+WORKDIR /app
+
+# Default command
+CMD ["/bin/bash", "-l"]
