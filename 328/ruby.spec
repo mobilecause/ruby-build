@@ -705,8 +705,10 @@ for cert in \
   rubygems.org/GlobalSignRootCA.pem \
   rubygems.org/GlobalSignRootCA_R3.pem
 do
-  rm %{buildroot}%{rubygems_dir}/rubygems/ssl_certs/$cert
-  rm -d $(dirname %{buildroot}%{rubygems_dir}/rubygems/ssl_certs/$cert) || :
+  if [ -f "%{buildroot}%{rubygems_dir}/rubygems/ssl_certs/$cert" ]; then
+    rm %{buildroot}%{rubygems_dir}/rubygems/ssl_certs/$cert
+    rm -d $(dirname %{buildroot}%{rubygems_dir}/rubygems/ssl_certs/$cert) || :
+  fi
 done
 # Ensure there is not forgotten any certificate.
 test ! "$(ls -A %{buildroot}%{rubygems_dir}/rubygems/ssl_certs/ 2>/dev/null)"
