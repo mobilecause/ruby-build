@@ -39,38 +39,24 @@ USER builder
 WORKDIR /home/builder
 
 # Copy Ruby 3.2.8 spec files and patches from 328 folder
-COPY 328/ rpmbuild/SPECS/
-COPY 328/ruby.spec rpmbuild/SPECS/
-COPY 328/*.patch rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/sources rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/*.rb rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/macros.* rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/rubygems.* rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/*.stp rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/*.con rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/ruby.rpmlintrc rpmbuild/SOURCES/ 2>/dev/null || true
-COPY 328/test_*.rb rpmbuild/SOURCES/ 2>/dev/null || true
+COPY 328/ rpmbuild/SOURCES/
 
-# Download Ruby 3.2.8 source tarball based on spec file
+# Move ruby.spec to SPECS directory and fix duplicate patch applications
 USER root
 RUN cd /home/builder && \
-    if [ -f rpmbuild/SPECS/sources ]; then \
-        mv rpmbuild/SPECS/sources rpmbuild/SOURCES/; \
+    if [ -f rpmbuild/SOURCES/ruby.spec ]; then \
+        mv rpmbuild/SOURCES/ruby.spec rpmbuild/SPECS/; \
     fi && \
     chown -R builder:builder rpmbuild/
 
+# Download Ruby 3.2.8 source tarball based on spec file
 USER builder
 RUN cd /home/builder && \
     spectool -g -R rpmbuild/SPECS/ruby.spec
 
-# Install additional build dependencies and create missing tools
+# Install additional build dependencies including Rust and create missing tools
 USER root
-RUN dnf install -y --allowerasing checksec || true
-RUN if [ ! -f /usr/bin/multilib-rpm-config ]; then \
-        echo '#!/bin/bash' > /usr/bin/multilib-rpm-config && \
-        echo 'echo "multilib-rpm-config: skipped for container build"' >> /usr/bin/multilib-rpm-config && \
-        chmod +x /usr/bin/multilib-rpm-config; \
-    fi
+RUN dnf install -y --allowerasing checksec multilib-rpm-config rust cargo || true
 
 # Install Ruby build dependencies
 RUN cd /home/builder && \

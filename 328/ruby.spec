@@ -74,9 +74,9 @@
 
 %global tapset_libdir %(echo %{_libdir} | sed 's/64//')*
 
-%if 0%{?fedora} >= 19
+#%if 0%{?fedora} >= 19
 %bcond_without rubypick
-%endif
+#%endif
 
 %bcond_without cmake
 %bcond_without git
@@ -85,15 +85,15 @@
 %bcond_without systemtap
 # YJIT is supported on x86_64 and aarch64.
 # https://github.com/ruby/ruby/blob/master/doc/yjit/yjit.md
-%ifarch x86_64 aarch64
+#%ifarch x86_64 aarch64
 %bcond_without yjit
-%endif
+#%endif
 # Enable test when building on local.
 %bcond_with bundler_tests
 
-%if 0%{?fedora}
+#%if 0%{?fedora}
 %bcond_without hardening_test
-%endif
+#%endif
 
 # The additional linker flags break binary rubygem- packages.
 # https://bugzilla.redhat.com/show_bug.cgi?id=2043092
