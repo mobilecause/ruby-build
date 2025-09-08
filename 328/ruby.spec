@@ -665,7 +665,6 @@ pushd %{_vpath_builddir}
         --with-sitearchhdrdir='$(sitehdrdir)/$(arch)' \
         --with-vendorarchhdrdir='$(vendorhdrdir)/$(arch)' \
         --with-rubygemsdir='%{rubygems_dir}' \
-        --with-ruby-pc='%{name}.pc' \
         --with-compress-debug-sections=no \
         --disable-rpath \
         --enable-mkmf-verbose \
@@ -683,6 +682,8 @@ popd
 rm -rf %{buildroot}
 
 %make_install -C %{_vpath_builddir}
+
+ln -s libruby.so.%{ruby_version} %{buildroot}%{_libdir}/libruby.so
 
 # TODO: Regenerate RBS parser in lib/rbs/parser.rb
 
