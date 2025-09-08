@@ -41,7 +41,7 @@ WORKDIR /home/builder
 # Copy Ruby 3.2.8 spec files and patches from 328 folder
 COPY 328/ rpmbuild/SOURCES/
 
-# Move ruby.spec to SPECS directory and fix duplicate patch applications
+# Move ruby.spec to SPECS directory
 USER root
 RUN cd /home/builder && \
     if [ -f rpmbuild/SOURCES/ruby.spec ]; then \

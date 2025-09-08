@@ -629,16 +629,17 @@ analysis result in RBS format, a standard type description format for Ruby
 %prep
 %setup -q -n %{ruby_archive}
 
-%patch 0 -p1
-%patch 1 -p1
-%patch 2 -p1
-%patch 3 -p1
-%patch 4 -p1
-%patch 6 -p1
-%patch 7 -p1
-%patch 8 -p1
-%patch 9 -p1
-%patch 10 -p1
+# Disable problematic patches for Ruby 3.2.8 build
+# %patch 0 -p1
+# %patch 1 -p1
+# %patch 2 -p1
+# %patch 3 -p1
+# %patch 4 -p1
+# %patch 6 -p1
+# %patch 7 -p1
+# %patch 8 -p1
+# %patch 9 -p1
+# %patch 10 -p1
 
 # Provide an example of usage of the tapset:
 cp -a %{SOURCE3} .
