@@ -75,7 +75,7 @@
 %global tapset_libdir %(echo %{_libdir} | sed 's/64//')*
 
 #%if 0%{?fedora} >= 19
-%bcond_without rubypick
+%bcond_with rubypick
 #%endif
 
 %bcond_without cmake
@@ -744,9 +744,15 @@ mkdir -p %{buildroot}%{_exec_prefix}/lib{,64}/gems/%{name}
 # Move bundled rubygems to %%gem_dir and %%gem_extdir_mri
 # make symlinks for io-console and bigdecimal, which are considered to be part of stdlib by other Gems
 mkdir -p %{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib
-mv %{buildroot}%{ruby_libdir}/irb* %{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib
-mv %{buildroot}%{gem_dir}/specifications/default/irb-%{irb_version}.gemspec %{buildroot}%{gem_dir}/specifications
-ln -s %{gem_dir}/gems/irb-%{irb_version}/lib/irb.rb %{buildroot}%{ruby_libdir}/irb.rb
+if ls %{buildroot}%{ruby_libdir}/irb* 1> /dev/null 2>&1; then
+  mv %{buildroot}%{ruby_libdir}/irb* %{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib
+fi
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/irb-%{irb_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/irb-%{irb_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
+if [ -f "%{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib/irb.rb" ]; then
+  ln -s %{gem_dir}/gems/irb-%{irb_version}/lib/irb.rb %{buildroot}%{ruby_libdir}/irb.rb
+fi
 # TODO: This should be possible to replaced by simple directory symlink
 # after ~ F31 EOL (rhbz#1691039).
 mkdir -p %{buildroot}%{ruby_libdir}/irb
