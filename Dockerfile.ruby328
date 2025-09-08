@@ -25,7 +25,9 @@ RUN dnf update -y && \
         cmake \
         gmp-devel \
         hostname \
+        systemtap \
         procps-ng \
+        yjit \
         'dnf-command(builddep)' \
         dnf-plugins-core \
         openssl-devel

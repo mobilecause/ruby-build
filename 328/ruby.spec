@@ -755,15 +755,23 @@ if [ -f "%{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib/irb.rb" ]; then
 fi
 # TODO: This should be possible to replaced by simple directory symlink
 # after ~ F31 EOL (rhbz#1691039).
-mkdir -p %{buildroot}%{ruby_libdir}/irb
-pushd %{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib
-find irb -type d -mindepth 1 -exec mkdir %{buildroot}%{ruby_libdir}/'{}' \;
-find irb -type f -exec ln -s %{gem_dir}/gems/irb-%{irb_version}/lib/'{}' %{buildroot}%{ruby_libdir}/'{}' \;
-popd
+if [ -d "%{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib" ]; then
+  mkdir -p %{buildroot}%{ruby_libdir}/irb
+  pushd %{buildroot}%{gem_dir}/gems/irb-%{irb_version}/lib
+  if [ -d "irb" ]; then
+    find irb -type d -mindepth 1 -exec mkdir %{buildroot}%{ruby_libdir}/'{}' \;
+    find irb -type f -exec ln -s %{gem_dir}/gems/irb-%{irb_version}/lib/'{}' %{buildroot}%{ruby_libdir}/'{}' \;
+  fi
+  popd
+fi
 
 mkdir -p %{buildroot}%{gem_dir}/gems/rdoc-%{rdoc_version}/lib
-mv %{buildroot}%{ruby_libdir}/rdoc* %{buildroot}%{gem_dir}/gems/rdoc-%{rdoc_version}/lib
-mv %{buildroot}%{gem_dir}/specifications/default/rdoc-%{rdoc_version}.gemspec %{buildroot}%{gem_dir}/specifications
+if ls %{buildroot}%{ruby_libdir}/rdoc* 1> /dev/null 2>&1; then
+  mv %{buildroot}%{ruby_libdir}/rdoc* %{buildroot}%{gem_dir}/gems/rdoc-%{rdoc_version}/lib
+fi
+if [ -f "%{buildroot}%{gem_dir}/specifications/default/rdoc-%{rdoc_version}.gemspec" ]; then
+  mv %{buildroot}%{gem_dir}/specifications/default/rdoc-%{rdoc_version}.gemspec %{buildroot}%{gem_dir}/specifications
+fi
 
 mkdir -p %{buildroot}%{gem_dir}/gems/bigdecimal-%{bigdecimal_version}/lib
 mkdir -p %{buildroot}%{_libdir}/gems/%{name}/bigdecimal-%{bigdecimal_version}/bigdecimal
