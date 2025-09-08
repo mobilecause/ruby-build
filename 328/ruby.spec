@@ -135,7 +135,7 @@ Source14: test_systemtap.rb
 
 # Fix ruby_version abuse.
 # https://bugs.ruby-lang.org/issues/11002
-#Patch0: ruby-2.3.0-ruby_version.patch
+Patch0: ruby-2.3.0-ruby_version.patch
 # http://bugs.ruby-lang.org/issues/7807
 Patch1: ruby-2.1.0-Prevent-duplicated-paths-when-empty-version-string-i.patch
 # Allows to override libruby.so placement. Hopefully we will be able to return
@@ -144,10 +144,10 @@ Patch1: ruby-2.1.0-Prevent-duplicated-paths-when-empty-version-string-i.patch
 Patch2: ruby-2.1.0-Enable-configuration-of-archlibdir.patch
 # Force multiarch directories for i.86 to be always named i386. This solves
 # some differencies in build between Fedora and RHEL.
-Patch3: ruby-2.1.0-always-use-i386.patch
+#Patch3: ruby-2.1.0-always-use-i386.patch
 # Allows to install RubyGems into custom directory, outside of Ruby's tree.
 # http://bugs.ruby-lang.org/issues/5617
-Patch4: ruby-2.1.0-custom-rubygems-location.patch
+#Patch4: ruby-2.1.0-custom-rubygems-location.patch
 # The ABRT hook used to be initialized by preludes via following patches:
 # https://bugs.ruby-lang.org/issues/8566
 # https://bugs.ruby-lang.org/issues/15306
@@ -156,20 +156,20 @@ Patch4: ruby-2.1.0-custom-rubygems-location.patch
 # this would require boostrapping:
 # https://lists.fedoraproject.org/archives/list/ruby-sig@lists.fedoraproject.org/message/LH6L6YJOYQT4Y5ZNOO4SLIPTUWZ5V45Q/
 # For now, load the ABRT hook via this simple patch:
-Patch6: ruby-2.7.0-Initialize-ABRT-hook.patch
+#Patch6: ruby-2.7.0-Initialize-ABRT-hook.patch
 # Prevent segfaults running with SystemTap due to `RubyVM::FrozenCore` being
 # corrupted by GC.
 # https://bugzilla.redhat.com/show_bug.cgi?id=2015441
 # https://bugzilla.redhat.com/show_bug.cgi?id=1986206
 # https://bugs.ruby-lang.org/issues/18257
-Patch7: ruby-3.1.0-Don-t-query-RubyVM-FrozenCore-for-class-path.patch
+#Patch7: ruby-3.1.0-Don-t-query-RubyVM-FrozenCore-for-class-path.patch
 # Avoid possible timeout errors in TestBugReporter#test_bug_reporter_add.
 # https://bugs.ruby-lang.org/issues/16492
-Patch8: ruby-2.7.1-Timeout-the-test_bug_reporter_add-witout-raising-err.patch
+#Patch8: ruby-2.7.1-Timeout-the-test_bug_reporter_add-witout-raising-err.patch
 # Disable syntax_suggest test suite, which tries to download its dependencies.
 # https://bugs.ruby-lang.org/issues/19297
-Patch9: ruby-3.2.0-Revert-Fix-test-syntax-suggest-order.patch
-Patch10: ruby-3.2.0-Revert-Test-syntax_suggest-by-make-check.patch
+#Patch9: ruby-3.2.0-Revert-Fix-test-syntax-suggest-order.patch
+#Patch10: ruby-3.2.0-Revert-Test-syntax_suggest-by-make-check.patch
 
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 %{?with_rubypick:Suggests: rubypick}
