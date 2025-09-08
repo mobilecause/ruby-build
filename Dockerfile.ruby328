@@ -27,7 +27,6 @@ RUN dnf update -y && \
         hostname \
         systemtap \
         procps-ng \
-        yjit \
         'dnf-command(builddep)' \
         dnf-plugins-core \
         openssl-devel
