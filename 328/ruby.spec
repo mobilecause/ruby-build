@@ -672,8 +672,6 @@ autoconf
         --enable-multiarch \
         %{?with_yjit: --enable-yjit} \
 
-popd
-
 # V=1 in %%make_build outputs the compiler options more verbosely.
 # https://bugs.ruby-lang.org/issues/18756
 %make_build COPY="cp -p"
