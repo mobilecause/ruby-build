@@ -663,7 +663,7 @@ autoconf
         --with-sitearchhdrdir='$(sitehdrdir)/$(arch)' \
         --with-vendorarchhdrdir='$(vendorhdrdir)/$(arch)' \
         --with-rubygemsdir='%{rubygems_dir}' \
-        --with-ruby-version='' \
+        --with-ruby-version='%{ruby_version}' \
         --with-ruby-pc='%{name}.pc' \
         --with-compress-debug-sections=no \
         --disable-rpath \
