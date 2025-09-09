@@ -697,7 +697,7 @@ rm -rf %{buildroot}
 
 # Version is now properly set via --with-ruby-version configure option
 # sed command to fix version placeholders in pkgconfig file
-sed -i 's/Version: \${ruby_version}/Version: %{ruby_version}/' %{buildroot}%{_libdir}/pkgconfig/%{name}.pc
+find %{buildroot} -name "%{name}.pc" -exec sed -i 's/Version: \${ruby_version}/Version: %{ruby_version}/' {} \;
 
 # Kill bundled certificates, as they should be part of ca-certificates.
 for cert in \
