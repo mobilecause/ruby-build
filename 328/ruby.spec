@@ -1101,8 +1101,8 @@ mv test/ruby/test_jit.rb{,.disable} || :
 %{_rpmmacrodir}/macros.ruby
 
 %{_includedir}/*
-%{_libdir}/libruby.so
-%{_libdir}/pkgconfig/%{name}.pc
+%{_libdir}/*/libruby.so
+%{_libdir}/*/pkgconfig/%{name}.pc
 
 %files libs
 %license COPYING
