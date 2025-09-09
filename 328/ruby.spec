@@ -674,7 +674,7 @@ autoconf
 
 # V=1 in %%make_build outputs the compiler options more verbosely.
 # https://bugs.ruby-lang.org/issues/18756
-%make_build COPY="cp -p"
+%make_build COPY="cp -p" Q=
 
 %install
 rm -rf %{buildroot}
